@@ -116,8 +116,8 @@
         "icon": "$(git-branch)"
       },
       {
-        "command": "markdownNotes.showGitOutput",
-        "title": "Show Git Output",
+        "command": "markdownNotes.showOutput",
+        "title": "Show Output Logs",
         "category": "Markdown Notes",
         "icon": "$(output)"
       },
@@ -198,7 +198,7 @@
           "group": "3_git@6"
         },
         {
-          "command": "markdownNotes.showGitOutput",
+          "command": "markdownNotes.showOutput",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "git@6"
         },

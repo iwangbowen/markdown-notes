@@ -171,9 +171,14 @@ export function registerGitCommands(
 
             const notebook = item.notebook;
 
+            // Show output first
+            gitManager.showOutput();
+
             // Use multi-step input for better UX
             const result = await collectGitConfiguration(notebook.gitConfig);
-            if (!result) { return; }
+            if (!result) {
+                return;
+            }
 
             const { remoteUrl, branch, authorName, authorEmail, credentials } = result;
 
@@ -403,9 +408,9 @@ export function registerGitCommands(
         })
     );
 
-    // Command: Show Git Output (new)
+    // Command: Show Output Logs (new command)
     context.subscriptions.push(
-        vscode.commands.registerCommand('markdownNotes.showGitOutput', () => {
+        vscode.commands.registerCommand('markdownNotes.showOutput', () => {
             gitManager.showOutput();
         })
     );
