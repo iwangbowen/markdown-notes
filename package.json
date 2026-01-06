@@ -78,6 +78,42 @@
         "title": "Expand All Notebooks",
         "category": "Markdown Notes",
         "icon": "$(expand-all)"
+      },
+      {
+        "command": "markdownNotes.configureGit",
+        "title": "Configure Git Repository",
+        "category": "Markdown Notes",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "markdownNotes.gitCommit",
+        "title": "Commit Changes",
+        "category": "Markdown Notes",
+        "icon": "$(git-commit)"
+      },
+      {
+        "command": "markdownNotes.gitPull",
+        "title": "Pull from Remote",
+        "category": "Markdown Notes",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "markdownNotes.gitPush",
+        "title": "Push to Remote",
+        "category": "Markdown Notes",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "markdownNotes.gitSync",
+        "title": "Sync with Remote",
+        "category": "Markdown Notes",
+        "icon": "$(sync)"
+      },
+      {
+        "command": "markdownNotes.gitStatus",
+        "title": "View Git Status",
+        "category": "Markdown Notes",
+        "icon": "$(git-branch)"
       }
     ],
     "menus": {
@@ -120,9 +156,39 @@
           "group": "1_actions@2"
         },
         {
+          "command": "markdownNotes.configureGit",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@1"
+        },
+        {
+          "command": "markdownNotes.gitCommit",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@2"
+        },
+        {
+          "command": "markdownNotes.gitPull",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@3"
+        },
+        {
+          "command": "markdownNotes.gitPush",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@4"
+        },
+        {
+          "command": "markdownNotes.gitSync",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@5"
+        },
+        {
+          "command": "markdownNotes.gitStatus",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@6"
+        },
+        {
           "command": "markdownNotes.deleteNotebook",
           "when": "view == markdownNotesView && viewItem == notebookItem",
-          "group": "2_delete@1"
+          "group": "9_delete@1"
         },
         {
           "command": "markdownNotes.createNote",
@@ -165,11 +231,15 @@
     "lint": "eslint src --ext ts"
   },
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
     "@types/node": "20.x",
+    "@types/vscode": "^1.85.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "eslint": "^8.56.0",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "http-client": "^4.3.1",
+    "isomorphic-git": "^1.36.1"
   }
 }

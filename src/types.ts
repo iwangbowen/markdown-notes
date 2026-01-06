@@ -1,4 +1,37 @@
 /**
+ * Git configuration interface
+ */
+export interface GitConfig {
+  /** Remote repository URL */
+  remoteUrl: string;
+  /** Git branch name */
+  branch: string;
+  /** Git author information */
+  author: {
+    name: string;
+    email: string;
+  };
+  /** Last sync timestamp */
+  lastSync?: number;
+  /** Whether git is initialized for this notebook */
+  initialized?: boolean;
+}
+
+/**
+ * Git status interface
+ */
+export interface GitStatus {
+  /** Number of uncommitted changes */
+  uncommittedChanges: number;
+  /** Number of unpushed commits */
+  unpushedCommits: number;
+  /** Whether there are conflicts */
+  hasConflicts: boolean;
+  /** Current branch */
+  branch: string;
+}
+
+/**
  * Notebook interface
  */
 export interface Notebook {
@@ -8,14 +41,8 @@ export interface Notebook {
   name: string;
   /** Creation timestamp */
   createdAt: number;
-  /** Git remote repository URL (reserved for future feature) */
-  gitRemote?: string;
-  /** Git branch name (reserved for future feature) */
-  gitBranch?: string;
-  /** Whether sync is enabled (reserved for future feature) */
-  syncEnabled?: boolean;
-  /** Last sync time (reserved for future feature) */
-  lastSyncTime?: number;
+  /** Git configuration (optional) */
+  gitConfig?: GitConfig;
 }
 
 /**

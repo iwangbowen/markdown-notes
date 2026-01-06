@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import { StorageManager } from './utils/storage';
 import { NotebookManager } from './notebookManager';
 import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem, FolderTreeItem } from './noteTreeProvider';
+import { GitManager } from './gitManager';
+import { GitConfig } from './types';
 
 /**
  * Extension activation function
@@ -15,6 +17,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Initialize notebook manager
   const notebookManager = new NotebookManager(storageManager);
+
+  // Initialize git manager
+  const gitManager = new GitManager(context, storageManager.getStorageUri());
 
   // Initialize TreeView
   const treeProvider = new NoteTreeProvider(notebookManager);
@@ -256,6 +261,10 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     })
   );
+
+  // Register Git commands
+  const { registerGitCommands } = await import('./gitCommands');
+  registerGitCommands(context, gitManager, notebookManager, () => treeProvider.refresh());
 }
 
 /**

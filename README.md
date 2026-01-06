@@ -5,9 +5,12 @@
 ## Features
 
 - **Multi-notebook Management** - Create multiple notebooks to organize notes independently
-- **Tree View** - Display all notebooks and notes in a tree structure in the sidebar
+- **Hierarchical Structure** - Support for folders and notes in tree structure
+- **Git Synchronization** - Sync notebooks with remote Git repositories (GitHub, GitLab, etc.)
+- **Tree View** - Display all notebooks, folders, and notes in a tree structure in the sidebar
 - **Native Editor** - Use VS Code's native Markdown editor with full preview and search support
 - **Automatic Storage** - Use `globalStorageUri` for automatic storage management, no manual configuration needed
+- **Secure Credentials** - Store Git credentials securely using VS Code's SecretStorage API
 - **Configuration Sync** - Notebook configuration syncs across devices via `globalState`
 - **Zero Configuration** - Works out of the box, no setup required
 
@@ -28,10 +31,58 @@
 
 #### Create Note
 
-- Right-click on a notebook
+- Right-click on a notebook or folder
 - Select "Create Note"
 - Enter note name
 - Markdown editor opens automatically
+
+#### Create Folder
+
+- Right-click on a notebook or folder
+- Select "Create Folder"
+- Enter folder name
+- Organize notes hierarchically
+
+#### Git Synchronization
+
+1. **Configure Git Repository**:
+   - Right-click on a notebook
+   - Select "Configure Git Repository"
+   - Enter repository URL (HTTPS)
+   - Set branch name (default: main)
+   - Enter author name and email
+   - Choose authentication method:
+     - Personal Access Token (recommended)
+     - Username + Password
+   - Choose initialization method:
+     - Clone from remote
+     - Initialize local repository
+
+2. **Commit Changes**:
+   - Right-click on a notebook
+   - Select "Commit Changes"
+   - Enter commit message
+   - Changes are committed locally
+
+3. **Pull from Remote**:
+   - Right-click on a notebook
+   - Select "Pull from Remote"
+   - Latest changes are pulled from remote repository
+
+4. **Push to Remote**:
+   - Right-click on a notebook
+   - Select "Push to Remote"
+   - Local commits are pushed to remote repository
+
+5. **Sync (Pull + Push)**:
+   - Right-click on a notebook
+   - Select "Sync with Remote"
+   - Automatically pulls and pushes changes
+
+6. **View Git Status**:
+   - Right-click on a notebook
+   - Select "View Git Status"
+   - Shows uncommitted changes, unpushed commits, and last sync time
 
 #### Edit Note
 
@@ -93,10 +144,11 @@ Note files are automatically stored in VS Code managed directories:
 
 ### Future Enhancements
 
-- Git sync support (each notebook associates with independent repository)
+- ~~Git sync support~~ ✅ Implemented
 - Tags and categories
 - Full-text search
 - Statistics and analytics
+- Conflict resolution UI for Git merges
 
 ## Development
 
@@ -128,13 +180,48 @@ vsce package
 |---------|-------------|
 | `markdownNotes.createNotebook` | Create Notebook |
 | `markdownNotes.createNote` | Create Note |
+| `markdownNotes.createFolder` | Create Folder |
 | `markdownNotes.deleteNote` | Delete Note |
+| `markdownNotes.deleteFolder` | Delete Folder |
 | `markdownNotes.deleteNotebook` | Delete Notebook |
 | `markdownNotes.refreshTree` | Refresh Tree View |
+| `markdownNotes.expandAll` | Expand All Notebooks |
+| `markdownNotes.configureGit` | Configure Git Repository |
+| `markdownNotes.gitCommit` | Commit Changes |
+| `markdownNotes.gitPull` | Pull from Remote |
+| `markdownNotes.gitPush` | Push to Remote |
+| `markdownNotes.gitSync` | Sync with Remote |
+| `markdownNotes.gitStatus` | View Git Status |
 
 ## Contributing
 
 Issues and Pull Requests are welcome!
+
+## Technical Details
+
+### Git Integration
+
+This extension uses **isomorphic-git** for Git operations:
+
+- **Pure JavaScript implementation** - No dependency on system Git installation
+- **Cross-platform compatibility** - Works seamlessly on Windows, macOS, and Linux
+- **HTTP(S) support** - Communicates with remote repositories via HTTPS
+- **Secure credential storage** - Uses VS Code's SecretStorage API to store tokens/passwords
+- **Private repository support** - Supports Personal Access Tokens and username/password authentication
+
+### Supported Git Platforms
+
+- GitHub (Personal Access Token recommended)
+- GitLab
+- Bitbucket
+- Any Git server with HTTPS access
+
+### Security
+
+- Git credentials are stored using VS Code's built-in SecretStorage API
+- Passwords and tokens are never stored in plain text
+- Each notebook's credentials are stored separately
+- Credentials are automatically encrypted by VS Code
 
 ## License
 

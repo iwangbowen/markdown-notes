@@ -60,6 +60,19 @@ export class NotebookManager {
   }
 
   /**
+   * Update notebook configuration
+   */
+  async updateNotebook(notebook: Notebook): Promise<void> {
+    const config = await this.storageManager.getConfig();
+    const index = config.notebooks.findIndex(n => n.id === notebook.id);
+
+    if (index !== -1) {
+      config.notebooks[index] = notebook;
+      await this.storageManager.saveConfig(config);
+    }
+  }
+
+  /**
    * Create note
    */
   async createNote(notebookId: string, name: string, folderPath: string = ''): Promise<Note> {
