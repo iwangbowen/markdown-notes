@@ -101,6 +101,9 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined | null | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+  // Cache for parent relationships
+  private parentMap = new Map<string, TreeItem>();
+
   constructor(
     private notebookManager: NotebookManager
   ) { }
@@ -109,6 +112,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
    * Refresh tree view
    */
   refresh(): void {
+    this.parentMap.clear();
     this._onDidChangeTreeData.fire();
   }
 
@@ -120,22 +124,45 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
   }
 
   /**
+   * Get parent of tree item (required for reveal method)
+   */
+  getParent(element: TreeItem): TreeItem | undefined {
+    return this.parentMap.get(element.id || '');
+  }
+
+  /**
    * Get children nodes
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[]> {
     if (!element) {
       // Root level: return all notebooks
-      return this.getNotebookItems();
+      const items = await this.getNotebookItems();
+      // Notebooks have no parent
+      return items;
     }
 
     if (element instanceof NotebookTreeItem) {
       // Notebook level: return folders and notes under this notebook
-      return this.getFolderAndNoteItems(element.notebook.id, '');
+      const items = await this.getFolderAndNoteItems(element.notebook.id, '');
+      // Set parent for all items
+      items.forEach(item => {
+        if (item.id) {
+          this.parentMap.set(item.id, element);
+        }
+      });
+      return items;
     }
 
     if (element instanceof FolderTreeItem) {
       // Folder level: return folders and notes under this folder
-      return this.getFolderAndNoteItems(element.folder.notebookId, element.folder.path);
+      const items = await this.getFolderAndNoteItems(element.folder.notebookId, element.folder.path);
+      // Set parent for all items
+      items.forEach(item => {
+        if (item.id) {
+          this.parentMap.set(item.id, element);
+        }
+      });
+      return items;
     }
 
     return [];

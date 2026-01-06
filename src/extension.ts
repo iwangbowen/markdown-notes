@@ -244,6 +244,17 @@ export async function activate(context: vscode.ExtensionContext) {
       vscode.window.showInformationMessage('Notes list refreshed');
     })
   );
+
+  // Register command: expand all notebooks
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.expandAll', async () => {
+      const notebooks = await notebookManager.getNotebooks();
+      for (const notebook of notebooks) {
+        const item = new NotebookTreeItem(notebook);
+        await treeView.reveal(item, { expand: 1, select: false, focus: false });
+      }
+    })
+  );
 }
 
 /**

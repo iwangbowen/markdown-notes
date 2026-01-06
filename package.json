@@ -72,6 +72,12 @@
         "title": "Refresh",
         "category": "Markdown Notes",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "markdownNotes.expandAll",
+        "title": "Expand All Notebooks",
+        "category": "Markdown Notes",
+        "icon": "$(expand-all)"
       }
     ],
     "menus": {
@@ -82,9 +88,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "markdownNotes.refreshTree",
+          "command": "markdownNotes.expandAll",
           "when": "view == markdownNotesView",
           "group": "navigation@2"
+        },
+        {
+          "command": "markdownNotes.refreshTree",
+          "when": "view == markdownNotesView",
+          "group": "navigation@3"
         }
       ],
       "view/item/context": [
