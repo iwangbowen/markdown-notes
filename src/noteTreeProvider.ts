@@ -156,7 +156,8 @@ export class FolderTreeItem extends TreeItem {
 export class NoteTreeItem extends TreeItem {
   constructor(
     public readonly note: Note,
-    public readonly noteUri: vscode.Uri
+    public readonly noteUri: vscode.Uri,
+    public readonly notebookId: string
   ) {
     super(note.name, vscode.TreeItemCollapsibleState.None, 'note');
 
@@ -316,7 +317,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
       // Always use file: scheme URI by reconstructing from the stored URI's fsPath
       const parsedUri = vscode.Uri.parse(note.uri);
       const fileUri = vscode.Uri.file(parsedUri.fsPath);
-      items.push(new NoteTreeItem(note, fileUri));
+      items.push(new NoteTreeItem(note, fileUri, notebookId));
     }
 
     return items;

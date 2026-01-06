@@ -135,6 +135,28 @@ Device B (New device):
 5. Commit & Push → Sync changes back
 ```
 
+#### File-Level Git Operations
+
+For individual notes, you can view Git history and changes using VS Code's built-in Git features:
+
+**View File History**:
+
+- Right-click on a note → "View File History"
+- Shows all commits that modified this file
+- Requires VS Code's Git extension (enabled by default)
+
+**Compare with HEAD**:
+
+- Right-click on a note → "Compare with HEAD"
+- Shows diff between current file and latest commit
+- Useful for reviewing unsaved changes
+
+**Git Decorations**:
+
+- Modified files show "M" badge in TreeView
+- Untracked files show "U" badge
+- Requires `explorer.decorations.badges` and `git.decorations.enabled` settings (enabled by default)
+
 #### Edit Note
 
 - Click on a note to open it in the editor

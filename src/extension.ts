@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 import { StorageManager } from './utils/storage';
 import { Logger } from './utils/logger';
 import { NotebookManager } from './notebookManager';
@@ -383,6 +384,125 @@ export async function activate(context: vscode.ExtensionContext) {
         await vscode.commands.executeCommand('revealFileInOS', notebookUri);
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to reveal in explorer: ${error}`);
+      }
+    })
+  );
+
+  // Register command: view file history
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.viewFileHistory', async (item: NoteTreeItem) => {
+      if (!item?.noteUri) {
+        vscode.window.showWarningMessage('Please select a note');
+        return;
+      }
+
+      try {
+        const notebookId = item.notebookId;
+
+        // Get file history using isomorphic-git
+        logger.info(`Getting file history for: ${item.noteUri.fsPath}`, 'Git');
+        const history = await gitManager.getFileHistory(notebookId, item.noteUri.fsPath);
+
+        if (history.length === 0) {
+          vscode.window.showInformationMessage('No commit history found for this file');
+          return;
+        }
+
+        // Show history in QuickPick
+        interface CommitQuickPickItem extends vscode.QuickPickItem {
+          commit: typeof history[0];
+        }
+
+        const items: CommitQuickPickItem[] = history.map(commit => {
+          const date = new Date(commit.timestamp);
+          const dateStr = date.toLocaleString();
+
+          return {
+            label: `$(git-commit) ${commit.message.split('\n')[0]}`,
+            description: commit.oid.substring(0, 7),
+            detail: `${commit.author} • ${dateStr}`,
+            commit
+          };
+        });
+
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: 'Select a commit to view file content',
+          matchOnDescription: true,
+          matchOnDetail: true
+        });
+
+        if (selected) {
+          // Get file content at this commit
+          const content = await gitManager.getFileAtCommit(
+            notebookId,
+            item.noteUri.fsPath,
+            selected.commit.oid
+          );
+
+          // Create a read-only document with custom URI scheme
+          const historicalUri = vscode.Uri.parse(
+            `markdown-notes-history:${path.basename(item.noteUri.fsPath)}?` +
+            `commit=${selected.commit.oid}&path=${encodeURIComponent(item.noteUri.fsPath)}`
+          );
+
+          // Register a text document content provider for the historical file
+          const contentProvider = new class implements vscode.TextDocumentContentProvider {
+            provideTextDocumentContent(uri: vscode.Uri): string {
+              return Buffer.from(content).toString('utf-8');
+            }
+          };
+
+          const registration = vscode.workspace.registerTextDocumentContentProvider(
+            'markdown-notes-history',
+            contentProvider
+          );
+
+          // Open the document (it will be read-only because it's from a content provider)
+          const doc = await vscode.workspace.openTextDocument(historicalUri);
+
+          await vscode.window.showTextDocument(doc, {
+            preview: true,
+            viewColumn: vscode.ViewColumn.Beside
+          });
+
+          // Show info with short commit hash
+          const shortHash = selected.commit.oid.substring(0, 7);
+          const fileName = path.basename(item.noteUri.fsPath);
+          vscode.window.showInformationMessage(
+            `Viewing ${fileName} at commit ${shortHash} (read-only)`
+          );
+
+          // Dispose the provider after document is closed
+          const disposable = vscode.workspace.onDidCloseTextDocument(closedDoc => {
+            if (closedDoc.uri.toString() === historicalUri.toString()) {
+              registration.dispose();
+              disposable.dispose();
+            }
+          });
+        }
+      } catch (error) {
+        logger.error(`Failed to view file history: ${error}`, 'Git');
+        vscode.window.showErrorMessage(`Failed to view file history: ${error}`);
+      }
+    })
+  );
+
+  // Register command: compare with HEAD (use VS Code built-in Git)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.compareWithHEAD', async (item: NoteTreeItem) => {
+      if (!item || !item.noteUri) {
+        vscode.window.showWarningMessage('Please select a note');
+        return;
+      }
+
+      try {
+        // Execute Git Compare command (requires Git extension)
+        await vscode.commands.executeCommand('git.openChange', item.noteUri);
+      } catch (error) {
+        logger.error(`Failed to compare with HEAD: ${error}`, 'Git');
+        vscode.window.showErrorMessage(
+          `Failed to compare with HEAD. Make sure the Git extension is enabled and the file has changes.`
+        );
       }
     })
   );

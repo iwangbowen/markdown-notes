@@ -2,7 +2,7 @@
   "name": "markdown-notes",
   "displayName": "Markdown Notes Manager",
   "description": "Multi-notebook Markdown notes manager with tree view and native editor",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "WangBowen",
   "icon": "resources/icon.png",
   "repository": {
@@ -155,6 +155,18 @@
         "title": "Reveal in File Explorer",
         "category": "Markdown Notes",
         "icon": "$(folder-opened)"
+      },
+      {
+        "command": "markdownNotes.viewFileHistory",
+        "title": "View File History",
+        "category": "Markdown Notes",
+        "icon": "$(history)"
+      },
+      {
+        "command": "markdownNotes.compareWithHEAD",
+        "title": "Compare with HEAD",
+        "category": "Markdown Notes",
+        "icon": "$(git-compare)"
       }
     ],
     "menus": {
@@ -280,6 +292,16 @@
           "command": "markdownNotes.deleteNote",
           "when": "view == markdownNotesView && viewItem == noteItem",
           "group": "1_actions@1"
+        },
+        {
+          "command": "markdownNotes.viewFileHistory",
+          "when": "view == markdownNotesView && viewItem == noteItem",
+          "group": "2_git@1"
+        },
+        {
+          "command": "markdownNotes.compareWithHEAD",
+          "when": "view == markdownNotesView && viewItem == noteItem",
+          "group": "2_git@2"
         }
       ]
     }

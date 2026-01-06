@@ -5,6 +5,22 @@ All notable changes to the "Markdown Notes Manager" extension will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-01-06
+
+### Added
+
+- **Read-only Historical Files** - Files opened from commit history are now read-only
+  - Uses custom URI scheme (`markdown-notes-history:`) for historical content
+  - Prevents accidental modifications to historical snapshots
+  - Clearly labeled as "(read-only)" in status message
+
+### Fixed
+
+- **File History Implementation** - Fixed "View File History" command
+  - Added missing `notebookId` parameter to `NoteTreeItem` constructor
+  - Added missing `path` module import
+  - Now correctly displays commit history and allows viewing file content at any commit
+
 ## [0.2.0] - 2026-01-06
 
 ### Added
@@ -16,15 +32,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Deleted files show "D" badge
   - Requires `explorer.decorations.badges` and `git.decorations.enabled` settings (enabled by default)
 
+- **File Git Operations** - Right-click context menu for notes
+  - **"View File History"** - Browse commit history and view file content at any commit
+    - Uses isomorphic-git to read commit logs
+    - Shows commit message, author, and timestamp in QuickPick
+    - Opens historical file content in side-by-side editor
+    - Works independently of workspace Git repositories
+  - **"Compare with HEAD"** - Compare file with latest commit
+    - Uses VS Code's built-in diff viewer
+
+- **Custom Folder Icons** - Consistent folder appearance
+  - Custom SVG folder icon prevents Icon Theme interference
+  - Folders always display the same icon regardless of name
+
 ### Fixed
 
 - **URI Scheme Issue** - Fixed TreeView items not showing Git decorations
   - Converted from `vscode-userdata:` to `file:` scheme for proper Git extension recognition
   - See [GIT_DECORATION_FIX.md](GIT_DECORATION_FIX.md) for technical details
 
+- **Icon Display** - Fixed literal "$(warning)" text appearing instead of icon
+  - Replaced $() syntax with ThemeIcon for proper rendering
+
 ### Changed
 
 - Removed custom FileDecorationProvider (no longer needed with native Git decorations)
+- Removed Timeline API implementation (was Proposed API, cannot use in published extensions)
 
 ## [0.1.4] - 2026-01-06
 

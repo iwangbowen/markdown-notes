@@ -389,4 +389,107 @@ export class GitManager {
             return undefined;
         }
     }
+
+    /**
+     * Get commit history for a specific file
+     */
+    async getFileHistory(notebookId: string, filePath: string): Promise<Array<{
+        oid: string;
+        message: string;
+        author: string;
+        timestamp: number;
+    }>> {
+        const dir = this.getNotebookDir(notebookId);
+
+        try {
+            // Normalize file path to relative path from notebook root
+            const relativePath = path.relative(dir, filePath).replaceAll('\\', '/');
+
+            this.logger.debug(`Getting history for file: ${relativePath}`, 'Git');
+
+            // Get all commits
+            const commits = await git.log({
+                fs,
+                dir,
+                depth: 100 // Get last 100 commits
+            });
+
+            // Filter commits that touched this file
+            const fileCommits = [];
+            for (const commit of commits) {
+                try {
+                    // Walk the tree to find the file
+                    const entries = await git.walk({
+                        fs,
+                        dir,
+                        trees: [git.TREE({ ref: commit.oid })],
+                        map: async (filepath, [entry]) => {
+                            if (filepath === relativePath) {
+                                return entry?.oid();
+                            }
+                            return undefined;
+                        }
+                    });
+
+                    // If file exists in this commit, include it
+                    const fileExists = entries.some(oid => oid !== undefined);
+                    if (fileExists) {
+                        fileCommits.push({
+                            oid: commit.oid,
+                            message: commit.commit.message,
+                            author: `${commit.commit.author.name} <${commit.commit.author.email}>`,
+                            timestamp: commit.commit.author.timestamp * 1000 // Convert to ms
+                        });
+                    }
+                } catch (err) {
+                    // Commit might not have this file, skip it
+                    this.logger.debug(`Skipping commit ${commit.oid.substring(0, 7)}: ${err}`, 'Git');
+                }
+            }
+
+            this.logger.info(`Found ${fileCommits.length} commits for file`, 'Git');
+            return fileCommits;
+        } catch (error) {
+            this.logger.error(`Failed to get file history: ${error}`, 'Git');
+            throw new Error(`Failed to get file history: ${error}`);
+        }
+    }
+
+    /**
+     * Get file content at a specific commit
+     */
+    async getFileAtCommit(notebookId: string, filePath: string, commitOid: string): Promise<Uint8Array> {
+        const dir = this.getNotebookDir(notebookId);
+
+        try {
+            const relativePath = path.relative(dir, filePath).replaceAll('\\', '/');
+
+            this.logger.debug(`Reading file ${relativePath} at commit ${commitOid.substring(0, 7)}`, 'Git');
+
+            // Read object using walk
+            const result = await git.walk({
+                fs,
+                dir,
+                trees: [git.TREE({ ref: commitOid })],
+                map: async (filepath, [entry]) => {
+                    if (filepath === relativePath && entry) {
+                        const oid = await entry.oid();
+                        const { blob } = await git.readBlob({ fs, dir, oid });
+                        return blob;
+                    }
+                    return undefined;
+                }
+            });
+
+            const blob = result.find(b => b !== undefined);
+            if (!blob) {
+                throw new Error('File not found in commit');
+            }
+
+            return blob;
+        } catch (error) {
+            this.logger.error(`Failed to read file at commit: ${error}`, 'Git');
+            throw new Error(`Failed to read file at commit: ${error}`);
+        }
+    }
 }
