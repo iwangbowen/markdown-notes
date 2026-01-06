@@ -1,6 +1,6 @@
 # 发布指南 | Publishing Guide
 
-本文档详细说明如何打包和发布 Markdown Notes 扩展到 VS Code Marketplace。
+本文档详细说明如何打包和发布 Markdown Notes Manager 扩展到 VS Code Marketplace.
 
 ---
 

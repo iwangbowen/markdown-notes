@@ -1,4 +1,4 @@
-# Markdown Notes
+# Markdown Notes Manager
 
 > A full-featured VS Code notes management extension with multi-notebook support, tree view, and native Markdown editor
 
@@ -18,7 +18,7 @@
 
 ### Installation
 
-1. Search for "Markdown Notes" in the VS Code Extensions Marketplace
+1. Search for "Markdown Notes Manager" in the VS Code Extensions Marketplace
 2. Click Install
 3. Click the Markdown Notes icon in the activity bar to get started
 

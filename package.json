@@ -1,6 +1,6 @@
 {
   "name": "markdown-notes",
-  "displayName": "Markdown Notes",
+  "displayName": "Markdown Notes Manager",
   "description": "Multi-notebook Markdown notes manager with tree view and native editor",
   "version": "0.1.0",
   "publisher": "WangBowen",
