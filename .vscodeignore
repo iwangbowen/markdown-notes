@@ -10,26 +10,26 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 
-# Build artifacts
-!out/**/*.js
+# Build artifacts (keep only dist/)
+out/**
+!dist/**/*.js
+
+# esbuild config
+esbuild.js
 
 # Documentation (exclude architecture docs, keep user docs)
 ARCHITECTURE.md
 CRITICAL_FIX_SYNC.md
+PACKAGING_SUMMARY.md
+QUICK_PUBLISH.md
 
 # Git and CI
 .git/**
 .github/**
 
 # Development files
+node_modules/**
 .editorconfig
-
-# Exclude devDependencies from node_modules (keep production dependencies)
-node_modules/@types/**
-node_modules/@typescript-eslint/**
-node_modules/@vscode/vsce/**
-node_modules/eslint/**
-node_modules/typescript/**
 
 # Tests
 **/test/**
