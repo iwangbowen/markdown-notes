@@ -1,3 +1,4 @@
+# Source files
 .vscode/**
 .vscode-test/**
 src/**
@@ -8,3 +9,45 @@ vsc-extension-quickstart.md
 **/.eslintrc.json
 **/*.map
 **/*.ts
+
+# Build artifacts
+!out/**/*.js
+
+# Documentation (exclude architecture docs, keep user docs)
+ARCHITECTURE.md
+CRITICAL_FIX_SYNC.md
+
+# Git and CI
+.git/**
+.github/**
+
+# Development files
+node_modules/**
+.editorconfig
+
+# Tests
+**/test/**
+**/*.test.ts
+**/*.spec.ts
+
+# IDE
+.idea/**
+*.swp
+*.swo
+*~
+
+# Logs and temp files
+*.log
+.DS_Store
+Thumbs.db
+
+# Package management
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Keep necessary files for users
+!README.md
+!CHANGELOG.md
+!LICENSE
+!resources/**
