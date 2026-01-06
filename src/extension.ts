@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { StorageManager } from './utils/storage';
+import { Logger } from './utils/logger';
 import { NotebookManager } from './notebookManager';
 import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem, FolderTreeItem } from './noteTreeProvider';
 import { GitManager } from './gitManager';
@@ -9,9 +10,9 @@ import { GitConfig } from './types';
  * Extension activation function
  */
 export async function activate(context: vscode.ExtensionContext) {
-  // Create output channel for extension logs
-  const outputChannel = vscode.window.createOutputChannel('Markdown Notes');
-  outputChannel.appendLine('Markdown Notes extension activated');
+  // Initialize logger
+  const logger = Logger.getInstance();
+  logger.info('Extension activated', 'Core');
 
   // Initialize storage manager
   const storageManager = new StorageManager(context);
@@ -273,5 +274,6 @@ export async function activate(context: vscode.ExtensionContext) {
  * Extension deactivation function
  */
 export function deactivate() {
-  // Extension deactivation (no logging needed as output channel is disposed)
+  const logger = Logger.getInstance();
+  logger.info('Extension deactivated', 'Core');
 }

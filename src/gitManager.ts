@@ -3,6 +3,7 @@ import * as git from 'isomorphic-git';
 import http from 'isomorphic-git/http/node';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Logger, LogLevel } from './utils/logger';
 import { GitConfig, GitStatus } from './types';
 
 /**
@@ -17,51 +18,41 @@ interface GitCredentials {
  * Git manager for handling git operations
  */
 export class GitManager {
-    private outputChannel: vscode.OutputChannel;
+    private readonly logger: Logger;
 
     constructor(
-        private context: vscode.ExtensionContext,
-        private globalStorageUri: vscode.Uri
+        private readonly context: vscode.ExtensionContext,
+        private readonly globalStorageUri: vscode.Uri
     ) {
-        // Create output channel for git logs
-        this.outputChannel = vscode.window.createOutputChannel('Markdown Notes - Git');
-    }
-
-    /**
-     * Log message to output channel
-     */
-    private log(message: string, level: 'info' | 'warn' | 'error' = 'info'): void {
-        const timestamp = new Date().toLocaleTimeString();
-        const prefix = level === 'error' ? '❌' : level === 'warn' ? '⚠️' : '✓';
-        this.outputChannel.appendLine(`[${timestamp}] ${prefix} ${message}`);
+        this.logger = Logger.getInstance();
     }
 
     /**
      * Show output channel
      */
     showOutput(): void {
-        this.outputChannel.show();
+        this.logger.show();
     }
 
     /**
      * Get git credentials from secret storage
      */
     private async getCredentials(notebookId: string): Promise<GitCredentials | undefined> {
-        this.log(`Retrieving credentials for notebook: ${notebookId}`);
+        this.logger.debug(`Retrieving credentials for notebook: ${notebookId}`, 'Git');
         const key = `git-auth-${notebookId}`;
         const stored = await this.context.secrets.get(key);
 
         if (stored) {
             try {
-                this.log('Credentials found');
+                this.logger.debug('Credentials found', 'Git');
                 return JSON.parse(stored);
             } catch {
-                this.log('Failed to parse stored credentials', 'error');
+                this.logger.error('Failed to parse stored credentials', 'Git');
                 return undefined;
             }
         }
 
-        this.log('No credentials found', 'warn');
+        this.logger.warn('No credentials found', 'Git');
         return undefined;
     }
 
@@ -69,20 +60,20 @@ export class GitManager {
      * Store git credentials in secret storage
      */
     async storeCredentials(notebookId: string, credentials: GitCredentials): Promise<void> {
-        this.log(`Storing credentials for notebook: ${notebookId}`);
+        this.logger.debug(`Storing credentials for notebook: ${notebookId}`, 'Git');
         const key = `git-auth-${notebookId}`;
         await this.context.secrets.store(key, JSON.stringify(credentials));
-        this.log('Credentials stored successfully');
+        this.logger.info('Credentials stored successfully', 'Git');
     }
 
     /**
      * Delete git credentials from secret storage
      */
     async deleteCredentials(notebookId: string): Promise<void> {
-        this.log(`Deleting credentials for notebook: ${notebookId}`);
+        this.logger.debug(`Deleting credentials for notebook: ${notebookId}`, 'Git');
         const key = `git-auth-${notebookId}`;
         await this.context.secrets.delete(key);
-        this.log('Credentials deleted');
+        this.logger.info('Credentials deleted', 'Git');
     }
 
     /**
@@ -97,16 +88,16 @@ export class GitManager {
      */
     async initRepository(notebookId: string, config: GitConfig): Promise<void> {
         const dir = this.getNotebookDir(notebookId);
-        this.log(`Initializing git repository at: ${dir}`);
-        this.log(`Branch: ${config.branch}, Remote: ${config.remoteUrl}`);
+        this.logger.info(`Initializing git repository at: ${dir}`, 'Git');
+        this.logger.info(`Branch: ${config.branch}, Remote: ${config.remoteUrl}`, 'Git');
 
         try {
             // Initialize git
-            this.log('Running: git init');
+            this.logger.debug('Running: git init', 'Git');
             await git.init({ fs, dir, defaultBranch: config.branch });
 
             // Configure author
-            this.log(`Setting user.name: ${config.author.name}`);
+            this.logger.debug(`Setting user.name: ${config.author.name}`, 'Git');
             await git.setConfig({
                 fs,
                 dir,
@@ -114,7 +105,7 @@ export class GitManager {
                 value: config.author.name
             });
 
-            this.log(`Setting user.email: ${config.author.email}`);
+            this.logger.debug(`Setting user.email: ${config.author.email}`, 'Git');
             await git.setConfig({
                 fs,
                 dir,
@@ -124,7 +115,7 @@ export class GitManager {
 
             // Add remote if provided
             if (config.remoteUrl) {
-                this.log(`Adding remote origin: ${config.remoteUrl}`);
+                this.logger.debug(`Adding remote origin: ${config.remoteUrl}`, 'Git');
                 await git.addRemote({
                     fs,
                     dir,
@@ -133,10 +124,10 @@ export class GitManager {
                 });
             }
 
-            this.log('Repository initialized successfully', 'info');
+            this.logger.info('Repository initialized successfully', 'Git');
             vscode.window.showInformationMessage(`Git repository initialized for notebook`);
         } catch (error) {
-            this.log(`Failed to initialize repository: ${error}`, 'error');
+            this.logger.error(`Failed to initialize repository: ${error}`, 'Git');
             throw new Error(`Failed to initialize git: ${error}`);
         }
     }
@@ -148,9 +139,9 @@ export class GitManager {
         const dir = this.getNotebookDir(notebookId);
         const credentials = await this.getCredentials(notebookId);
 
-        this.log(`Cloning repository: ${config.remoteUrl}`);
-        this.log(`Target directory: ${dir}`);
-        this.log(`Branch: ${config.branch}`);
+        this.logger.info(`Cloning repository: ${config.remoteUrl}`, 'Git');
+        this.logger.debug(`Target directory: ${dir}`, 'Git');
+        this.logger.debug(`Branch: ${config.branch}`, 'Git');
 
         try {
             await git.clone({
@@ -164,15 +155,14 @@ export class GitManager {
                 onAuth: () => credentials || {},
                 onProgress: (progress) => {
                     const percent = progress.total ? Math.round((progress.loaded / progress.total) * 100) : 0;
-                    this.log(`Clone progress: ${progress.phase} - ${percent}% (${progress.loaded}/${progress.total})`);
+                    this.logger.debug(`Clone progress: ${progress.phase} - ${percent}% (${progress.loaded}/${progress.total})`, 'Git');
                 }
             });
 
-            this.log('Repository cloned successfully', 'info');
+            this.logger.info('Repository cloned successfully', 'Git');
             vscode.window.showInformationMessage(`Repository cloned successfully`);
         } catch (error) {
-            this.log(`Clone failed: ${error}`, 'error');
-            this.showOutput(); // Auto-show output on error
+            this.logger.error(`Clone failed: ${error}`, 'Git');
             throw new Error(`Failed to clone repository: ${error}`);
         }
     }
@@ -183,16 +173,16 @@ export class GitManager {
     async commit(notebookId: string, message: string, config: GitConfig): Promise<void> {
         const dir = this.getNotebookDir(notebookId);
 
-        this.log(`Committing changes in: ${dir}`);
-        this.log(`Commit message: "${message}"`);
+        this.logger.info(`Committing changes in: ${dir}`, 'Git');
+        this.logger.debug(`Commit message: "${message}"`, 'Git');
 
         try {
             // Add all changes
             const files = await this.getChangedFiles(notebookId);
-            this.log(`Found ${files.length} changed files`);
+            this.logger.debug(`Found ${files.length} changed files`, 'Git');
 
             for (const file of files) {
-                this.log(`Adding file: ${file}`);
+                this.logger.debug(`Adding file: ${file}`, 'Git');
                 await git.add({ fs, dir, filepath: file });
             }
 
@@ -207,11 +197,10 @@ export class GitManager {
                 }
             });
 
-            this.log(`Committed successfully: ${sha.substring(0, 7)}`, 'info');
+            this.logger.info(`Committed successfully: ${sha.substring(0, 7)}`, 'Git');
             vscode.window.showInformationMessage(`Changes committed: ${sha.substring(0, 7)}`);
         } catch (error) {
-            this.log(`Commit failed: ${error}`, 'error');
-            this.showOutput();
+            this.logger.error(`Commit failed: ${error}`, 'Git');
             throw new Error(`Failed to commit: ${error}`);
         }
     }
@@ -223,8 +212,8 @@ export class GitManager {
         const dir = this.getNotebookDir(notebookId);
         const credentials = await this.getCredentials(notebookId);
 
-        this.log(`Pulling from remote: ${config.remoteUrl}`);
-        this.log(`Branch: ${config.branch}`);
+        this.logger.info(`Pulling from remote: ${config.remoteUrl}`, 'Git');
+        this.logger.debug(`Branch: ${config.branch}`, 'Git');
 
         try {
             await git.pull({
@@ -240,11 +229,10 @@ export class GitManager {
                 singleBranch: true
             });
 
-            this.log('Pull completed successfully', 'info');
+            this.logger.info('Pull completed successfully', 'Git');
             vscode.window.showInformationMessage(`Pulled latest changes from remote`);
         } catch (error) {
-            this.log(`Pull failed: ${error}`, 'error');
-            this.showOutput();
+            this.logger.error(`Pull failed: ${error}`, 'Git');
             throw new Error(`Failed to pull: ${error}`);
         }
     }
@@ -256,7 +244,7 @@ export class GitManager {
         const dir = this.getNotebookDir(notebookId);
         const credentials = await this.getCredentials(notebookId);
 
-        this.log(`Pushing to remote`);
+        this.logger.info(`Pushing to remote`, 'Git');
 
         try {
             await git.push({
@@ -267,11 +255,10 @@ export class GitManager {
                 onAuth: () => credentials || {}
             });
 
-            this.log('Push completed successfully', 'info');
+            this.logger.info('Push completed successfully', 'Git');
             vscode.window.showInformationMessage(`Pushed changes to remote`);
         } catch (error) {
-            this.log(`Push failed: ${error}`, 'error');
-            this.showOutput();
+            this.logger.error(`Push failed: ${error}`, 'Git');
             throw new Error(`Failed to push: ${error}`);
         }
     }
@@ -280,15 +267,14 @@ export class GitManager {
      * Sync (pull + push)
      */
     async sync(notebookId: string, config: GitConfig): Promise<void> {
-        this.log('Starting sync operation');
+        this.logger.info('Starting sync operation', 'Git');
         try {
             await this.pull(notebookId, config);
             await this.push(notebookId);
-            this.log('Sync completed successfully', 'info');
+            this.logger.info('Sync completed successfully', 'Git');
             vscode.window.showInformationMessage(`Sync completed successfully`);
         } catch (error) {
-            this.log(`Sync failed: ${error}`, 'error');
-            this.showOutput();
+            this.logger.error(`Sync failed: ${error}`, 'Git');
             throw new Error(`Failed to sync: ${error}`);
         }
     }
@@ -299,7 +285,7 @@ export class GitManager {
     async getStatus(notebookId: string): Promise<GitStatus> {
         const dir = this.getNotebookDir(notebookId);
 
-        this.log(`Getting git status for: ${dir}`);
+        this.logger.debug(`Getting git status for: ${dir}`, 'Git');
 
         try {
             // Get status matrix
@@ -316,8 +302,8 @@ export class GitManager {
             // Get log to check unpushed commits
             const commits = await git.log({ fs, dir, depth: 10 });
 
-            this.log(`Status: ${uncommittedChanges} uncommitted changes, branch: ${branch}`);
-            this.log(`Recent commits: ${commits.length}`);
+            this.logger.info(`Status: ${uncommittedChanges} uncommitted changes, branch: ${branch}`, 'Git');
+            this.logger.debug(`Recent commits: ${commits.length}`, 'Git');
 
             return {
                 uncommittedChanges,
@@ -326,7 +312,7 @@ export class GitManager {
                 branch
             };
         } catch (error) {
-            this.log(`Failed to get status: ${error}`, 'error');
+            this.logger.error(`Failed to get status: ${error}`, 'Git');
             throw new Error(`Failed to get status: ${error}`);
         }
     }
