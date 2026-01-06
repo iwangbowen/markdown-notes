@@ -192,6 +192,7 @@ vsce package
 | `markdownNotes.gitPush` | Push to Remote |
 | `markdownNotes.gitSync` | Sync with Remote |
 | `markdownNotes.gitStatus` | View Git Status |
+| `markdownNotes.showGitOutput` | Show Git Operation Logs |
 
 ## Contributing
 
@@ -208,6 +209,35 @@ This extension uses **isomorphic-git** for Git operations:
 - **HTTP(S) support** - Communicates with remote repositories via HTTPS
 - **Secure credential storage** - Uses VS Code's SecretStorage API to store tokens/passwords
 - **Private repository support** - Supports Personal Access Tokens and username/password authentication
+- **Detailed logging** - All Git operations are logged to Output Channel for debugging
+
+#### Logging and Debugging
+
+All Git operations are logged to the **"Markdown Notes - Git"** Output Channel:
+
+**Features**:
+
+- **Timestamps**: Every log entry includes time
+- **Log Levels**: Visual indicators ✓ (info), ⚠️ (warn), ❌ (error)
+- **Detailed Operation Logs**:
+  - Repository initialization steps (init, config, remote)
+  - Clone progress with percentages and phases
+  - Commit details (changed files, commit SHA)
+  - Pull/Push operation status
+  - Credential retrieval and storage
+  - Status checks with branch and change counts
+- **Auto-Show on Error**: Opens automatically when errors occur
+- **Manual Access**: Use "Git: Show Output" command anytime
+
+**Example Log Output**:
+
+```
+[10:30:15] ✓ Initializing git repository at: /path/to/notebook
+[10:30:15] ✓ Branch: main, Remote: https://github.com/user/repo.git
+[10:30:15] ✓ Running: git init
+[10:30:16] ✓ Repository initialized successfully
+[10:30:20] ✓ Clone progress: Receiving objects - 45% (450/1000)
+```
 
 ### Supported Git Platforms
 
