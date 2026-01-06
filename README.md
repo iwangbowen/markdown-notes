@@ -234,6 +234,21 @@ vsce package
 
 Issues and Pull Requests are welcome!
 
+---
+
+## ☕ Support This Project
+
+If you find this extension helpful, consider buying me a coffee! Your support helps maintain and improve this project.
+
+### 赞赏 / Donation
+
+<div align="center">
+  <img src="resources/wechat-pay.jpg" alt="微信赞赏码" width="200"/>
+  <p><i>微信扫码赞赏 | WeChat Pay</i></p>
+</div>
+
+---
+
 ## Technical Details
 
 ### Git Integration
