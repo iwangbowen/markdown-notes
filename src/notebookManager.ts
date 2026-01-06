@@ -170,6 +170,11 @@ export class NotebookManager {
     // Create directory
     await vscode.workspace.fs.createDirectory(folderUri);
 
+    // Add .gitkeep file to ensure Git tracks empty folders
+    const gitkeepUri = vscode.Uri.joinPath(folderUri, '.gitkeep');
+    const gitkeepContent = Buffer.from('# This file ensures Git tracks this empty folder\n', 'utf8');
+    await vscode.workspace.fs.writeFile(gitkeepUri, gitkeepContent);
+
     return {
       name,
       notebookId,
