@@ -252,6 +252,27 @@ vsce package
 
 Issues and Pull Requests are welcome!
 
+## Configuration
+
+### Git Decorations
+
+The extension displays Git status decorations in the TreeView (M for Modified, U for Untracked, A for Added, etc.). These decorations are provided by VS Code's native Git extension.
+
+**Ensure these settings are enabled** (they are enabled by default):
+
+```json
+{
+  "explorer.decorations.badges": true,
+  "git.decorations.enabled": true
+}
+```
+
+If you don't see Git decorations:
+
+1. Check that these settings are enabled in your VS Code user settings
+2. Verify that the notebook has been initialized or cloned (Git must be configured)
+3. Try reloading the VS Code window
+
 ## Technical Details
 
 ### Git Integration

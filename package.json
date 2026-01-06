@@ -2,7 +2,7 @@
   "name": "markdown-notes",
   "displayName": "Markdown Notes Manager",
   "description": "Multi-notebook Markdown notes manager with tree view and native editor",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "publisher": "WangBowen",
   "icon": "resources/icon.png",
   "repository": {

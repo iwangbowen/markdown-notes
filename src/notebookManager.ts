@@ -136,11 +136,14 @@ export class NotebookManager {
           const noteUri = vscode.Uri.joinPath(targetUri, name);
           const stat = await vscode.workspace.fs.stat(noteUri);
 
+          // Convert to file: scheme URI for Git decoration support
+          const fileUri = vscode.Uri.file(noteUri.fsPath);
+
           notes.push({
             name: name.replace(/\.md$/, ''),
             notebookId,
             folderPath,
-            uri: noteUri.toString(),
+            uri: fileUri.toString(),
             createdAt: stat.ctime,
             updatedAt: stat.mtime
           });
@@ -175,12 +178,15 @@ export class NotebookManager {
     const gitkeepContent = Buffer.from('# This file ensures Git tracks this empty folder\n', 'utf8');
     await vscode.workspace.fs.writeFile(gitkeepUri, gitkeepContent);
 
+    // Convert to file: scheme URI for Git decoration support
+    const fileUri = vscode.Uri.file(folderUri.fsPath);
+
     return {
       name,
       notebookId,
       parentPath,
       path: folderPath,
-      uri: folderUri.toString(),
+      uri: fileUri.toString(),
       createdAt: Date.now()
     };
   }

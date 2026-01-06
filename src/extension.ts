@@ -107,6 +107,30 @@ export async function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(treeView);
 
+  // Watch for file system changes in notebooks directory
+  const notebooksUri = vscode.Uri.joinPath(storageManager.getStorageUri(), 'notebooks');
+  const fileWatcher = vscode.workspace.createFileSystemWatcher(
+    new vscode.RelativePattern(notebooksUri, '**/*.md')
+  );
+
+  // Refresh tree when files are created, changed, or deleted
+  fileWatcher.onDidCreate(() => {
+    logger.debug('File created, refreshing tree view', 'Core');
+    treeProvider.refresh();
+  });
+
+  fileWatcher.onDidChange(() => {
+    logger.debug('File changed, refreshing tree view', 'Core');
+    treeProvider.refresh();
+  });
+
+  fileWatcher.onDidDelete(() => {
+    logger.debug('File deleted, refreshing tree view', 'Core');
+    treeProvider.refresh();
+  });
+
+  context.subscriptions.push(fileWatcher);
+
   // Auto-detect uninitialized notebooks (for cross-device sync)
   await checkUninitializedNotebooks(notebookManager, gitManager, treeProvider, treeView);
 

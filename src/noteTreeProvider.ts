@@ -142,6 +142,9 @@ export class FolderTreeItem extends TreeItem {
     this.iconPath = new vscode.ThemeIcon('folder');
     this.tooltip = folder.path;
     this.id = `folder-${folder.notebookId}-${folder.path}`;
+
+    // Set resource URI to enable Git decorations from VS Code's Git extension
+    this.resourceUri = folderUri;
   }
 }
 
@@ -159,6 +162,9 @@ export class NoteTreeItem extends TreeItem {
     this.iconPath = new vscode.ThemeIcon('markdown');
     this.tooltip = note.name;
     this.id = `note-${note.notebookId}-${note.name}`;
+
+    // Set resource URI to enable Git decorations from VS Code's Git extension
+    this.resourceUri = noteUri;
 
     // Click to open note
     this.command = {
@@ -292,14 +298,18 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
     // Add folders first
     for (const folder of folders) {
-      const uri = vscode.Uri.parse(folder.uri);
-      items.push(new FolderTreeItem(folder, uri));
+      // Always use file: scheme URI by reconstructing from the stored URI's fsPath
+      const parsedUri = vscode.Uri.parse(folder.uri);
+      const fileUri = vscode.Uri.file(parsedUri.fsPath);
+      items.push(new FolderTreeItem(folder, fileUri));
     }
 
     // Then add notes
     for (const note of notes) {
-      const uri = vscode.Uri.parse(note.uri);
-      items.push(new NoteTreeItem(note, uri));
+      // Always use file: scheme URI by reconstructing from the stored URI's fsPath
+      const parsedUri = vscode.Uri.parse(note.uri);
+      const fileUri = vscode.Uri.file(parsedUri.fsPath);
+      items.push(new NoteTreeItem(note, fileUri));
     }
 
     return items;

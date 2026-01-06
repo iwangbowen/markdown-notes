@@ -5,6 +5,27 @@ All notable changes to the "Markdown Notes Manager" extension will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-01-06
+
+### Added
+
+- **Git Status Decorations** - TreeView now displays native VS Code Git status decorations
+  - Modified files show "M" badge
+  - Untracked files show "U" badge
+  - Added files show "A" badge
+  - Deleted files show "D" badge
+  - Requires `explorer.decorations.badges` and `git.decorations.enabled` settings (enabled by default)
+
+### Fixed
+
+- **URI Scheme Issue** - Fixed TreeView items not showing Git decorations
+  - Converted from `vscode-userdata:` to `file:` scheme for proper Git extension recognition
+  - See [GIT_DECORATION_FIX.md](GIT_DECORATION_FIX.md) for technical details
+
+### Changed
+
+- Removed custom FileDecorationProvider (no longer needed with native Git decorations)
+
 ## [0.1.4] - 2026-01-06
 
 ### Changed

@@ -363,4 +363,30 @@ export class GitManager {
             return false;
         }
     }
+
+    /**
+     * Get Git status for a specific file
+     */
+    async getFileStatus(notebookId: string, filePath: string): Promise<string | undefined> {
+        const dir = this.getNotebookDir(notebookId);
+
+        try {
+            // Normalize file path to relative path from notebook root
+            const relativePath = path.relative(dir, filePath).replace(/\\/g, '/');
+
+            // Get status for this file
+            const status = await git.status({
+                fs,
+                dir,
+                filepath: relativePath
+            });
+
+            // Map isomorphic-git status to our status strings
+            // status can be: "unmodified", "modified", "added", "deleted", etc.
+            return status;
+        } catch (error) {
+            this.logger.debug(`Failed to get file status for ${filePath}: ${error}`, 'Git');
+            return undefined;
+        }
+    }
 }
