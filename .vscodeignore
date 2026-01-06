@@ -22,8 +22,14 @@ CRITICAL_FIX_SYNC.md
 .github/**
 
 # Development files
-node_modules/**
 .editorconfig
+
+# Exclude devDependencies from node_modules (keep production dependencies)
+node_modules/@types/**
+node_modules/@typescript-eslint/**
+node_modules/@vscode/vsce/**
+node_modules/eslint/**
+node_modules/typescript/**
 
 # Tests
 **/test/**
