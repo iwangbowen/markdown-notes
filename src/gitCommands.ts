@@ -5,6 +5,152 @@ import { NotebookTreeItem } from './noteTreeProvider';
 import { GitConfig } from './types';
 
 /**
+ * Git configuration collection result
+ */
+interface GitConfigurationResult {
+    remoteUrl: string;
+    branch: string;
+    authorName: string;
+    authorEmail: string;
+    credentials: {
+        username: string;
+        password: string;
+    };
+}
+
+/**
+ * Multi-step input for Git configuration
+ */
+async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitConfigurationResult | undefined> {
+    const state: Partial<GitConfigurationResult> = {};
+
+    // Step 1: Repository URL
+    const remoteUrl = await vscode.window.showInputBox({
+        title: 'Git Configuration (Step 1/5)',
+        prompt: 'Enter Git repository URL (HTTPS)',
+        placeHolder: 'https://github.com/username/repo.git',
+        value: existingConfig?.remoteUrl || '',
+        validateInput: (value) => {
+            if (!value.trim()) {
+                return 'Repository URL cannot be empty';
+            }
+            if (!value.startsWith('http://') && !value.startsWith('https://')) {
+                return 'Please use HTTPS URL';
+            }
+            return null;
+        }
+    });
+
+    if (!remoteUrl) { return undefined; }
+    state.remoteUrl = remoteUrl;
+
+    // Step 2: Branch
+    const branch = await vscode.window.showInputBox({
+        title: 'Git Configuration (Step 2/5)',
+        prompt: 'Enter branch name',
+        placeHolder: 'main',
+        value: existingConfig?.branch || 'main'
+    });
+
+    if (!branch) { return undefined; }
+    state.branch = branch;
+
+    // Step 3: Author name
+    const authorName = await vscode.window.showInputBox({
+        title: 'Git Configuration (Step 3/5)',
+        prompt: 'Enter your name (for commits)',
+        placeHolder: 'John Doe',
+        value: existingConfig?.author?.name || ''
+    });
+
+    if (!authorName) { return undefined; }
+    state.authorName = authorName;
+
+    // Step 4: Author email
+    const authorEmail = await vscode.window.showInputBox({
+        title: 'Git Configuration (Step 4/5)',
+        prompt: 'Enter your email (for commits)',
+        placeHolder: 'john@example.com',
+        value: existingConfig?.author?.email || '',
+        validateInput: (value) => {
+            if (!value.includes('@')) {
+                return 'Please enter a valid email';
+            }
+            return null;
+        }
+    });
+
+    if (!authorEmail) { return undefined; }
+    state.authorEmail = authorEmail;
+
+    // Step 5: Authentication
+    const authType = await vscode.window.showQuickPick(
+        [
+            { label: '$(key) Personal Access Token', value: 'token', description: 'Recommended for GitHub, GitLab' },
+            { label: '$(lock) Username + Password', value: 'password', description: 'Traditional authentication' }
+        ],
+        {
+            title: 'Git Configuration (Step 5/5)',
+            placeHolder: 'Select authentication method'
+        }
+    );
+
+    if (!authType) { return undefined; }
+
+    let credentials: { username: string; password: string };
+
+    if (authType.value === 'token') {
+        const token = await vscode.window.showInputBox({
+            title: 'Git Configuration (Step 5/5) - Token',
+            prompt: 'Enter your Personal Access Token',
+            placeHolder: 'ghp_xxxxxxxxxxxx (GitHub) or glpat-xxxxxxxxxxxx (GitLab)',
+            password: true,
+            validateInput: (value) => {
+                if (!value.trim()) {
+                    return 'Token cannot be empty';
+                }
+                return null;
+            }
+        });
+
+        if (!token) { return undefined; }
+
+        credentials = {
+            username: 'oauth2',
+            password: token
+        };
+    } else {
+        const username = await vscode.window.showInputBox({
+            title: 'Git Configuration (Step 5/5) - Username',
+            prompt: 'Enter your username',
+            placeHolder: 'username'
+        });
+
+        if (!username) { return undefined; }
+
+        const password = await vscode.window.showInputBox({
+            title: 'Git Configuration (Step 5/5) - Password',
+            prompt: 'Enter your password',
+            password: true,
+            validateInput: (value) => {
+                if (!value.trim()) {
+                    return 'Password cannot be empty';
+                }
+                return null;
+            }
+        });
+
+        if (!password) { return undefined; }
+
+        credentials = { username, password };
+    }
+
+    state.credentials = credentials;
+
+    return state as GitConfigurationResult;
+}
+
+/**
  * Register all git-related commands
  */
 export function registerGitCommands(
@@ -24,97 +170,11 @@ export function registerGitCommands(
 
             const notebook = item.notebook;
 
-            // Step 1: Ask for repository URL
-            const remoteUrl = await vscode.window.showInputBox({
-                prompt: 'Enter Git repository URL (HTTPS)',
-                placeHolder: 'https://github.com/username/repo.git',
-                value: notebook.gitConfig?.remoteUrl || '',
-                validateInput: (value) => {
-                    if (!value.trim()) {
-                        return 'Repository URL cannot be empty';
-                    }
-                    if (!value.startsWith('http://') && !value.startsWith('https://')) {
-                        return 'Please use HTTPS URL';
-                    }
-                    return null;
-                }
-            });
+            // Use multi-step input for better UX
+            const result = await collectGitConfiguration(notebook.gitConfig);
+            if (!result) { return; }
 
-            if (!remoteUrl) { return; }
-
-            // Step 2: Ask for branch
-            const branch = await vscode.window.showInputBox({
-                prompt: 'Enter branch name',
-                placeHolder: 'main',
-                value: notebook.gitConfig?.branch || 'main'
-            });
-
-            if (!branch) { return; }
-
-            // Step 3: Ask for author name
-            const authorName = await vscode.window.showInputBox({
-                prompt: 'Enter your name (for commits)',
-                placeHolder: 'John Doe',
-                value: notebook.gitConfig?.author?.name || ''
-            });
-
-            if (!authorName) { return; }
-
-            // Step 4: Ask for author email
-            const authorEmail = await vscode.window.showInputBox({
-                prompt: 'Enter your email (for commits)',
-                placeHolder: 'john@example.com',
-                value: notebook.gitConfig?.author?.email || '',
-                validateInput: (value) => {
-                    if (!value.includes('@')) {
-                        return 'Please enter a valid email';
-                    }
-                    return null;
-                }
-            });
-
-            if (!authorEmail) { return; }
-
-            // Step 5: Ask for credentials
-            const authType = await vscode.window.showQuickPick(
-                ['Personal Access Token', 'Username + Password'],
-                { placeHolder: 'Select authentication method' }
-            );
-
-            if (!authType) { return; }
-
-            let credentials: any = {};
-
-            if (authType === 'Personal Access Token') {
-                const token = await vscode.window.showInputBox({
-                    prompt: 'Enter your Personal Access Token',
-                    placeHolder: 'ghp_xxxxxxxxxxxx',
-                    password: true
-                });
-
-                if (!token) { return; }
-
-                credentials = {
-                    username: 'oauth2',
-                    password: token
-                };
-            } else {
-                const username = await vscode.window.showInputBox({
-                    prompt: 'Enter your username',
-                    placeHolder: 'username'
-                });
-
-                if (!username) { return; }
-
-                const password = await vscode.window.showInputBox({
-                    prompt: 'Enter your password',
-                    password: true
-                });
-
-                if (!password) { return; }
-
-                credentials = { username, password };
-            }
+            const { remoteUrl, branch, authorName, authorEmail, credentials } = result;
 
             // Save credentials
             await gitManager.storeCredentials(notebook.id, credentials);
@@ -139,11 +199,17 @@ export function registerGitCommands(
 
             if (!isInitialized) {
                 const choice = await vscode.window.showQuickPick(
-                    ['Clone from remote', 'Initialize local repository'],
-                    { placeHolder: 'Choose initialization method' }
+                    [
+                        { label: '$(cloud-download) Clone from remote', value: 'clone', description: 'Download existing repository' },
+                        { label: '$(repo) Initialize local repository', value: 'init', description: 'Create new local repository' }
+                    ],
+                    {
+                        title: 'Repository Initialization',
+                        placeHolder: 'Choose how to initialize the repository'
+                    }
                 );
 
-                if (choice === 'Clone from remote') {
+                if (choice?.value === 'clone') {
                     try {
                         await vscode.window.withProgress({
                             location: vscode.ProgressLocation.Notification,
@@ -159,7 +225,7 @@ export function registerGitCommands(
                     } catch (error) {
                         vscode.window.showErrorMessage(`Failed to clone: ${error}`);
                     }
-                } else if (choice === 'Initialize local repository') {
+                } else if (choice?.value === 'init') {
                     try {
                         await gitManager.initRepository(notebook.id, gitConfig);
                         gitConfig.initialized = true;
