@@ -477,19 +477,36 @@ export function registerGitCommands(
                 return;
             }
 
+            const notebook = item.notebook;
+            const gitConfig = notebook.gitConfig!;  // Non-null assertion since we checked above
+
             // Check if git is initialized
-            if (!item.notebook.gitConfig.initialized) {
-                vscode.window.showWarningMessage('Please initialize git repository first (Configure Git → Choose Init/Clone)');
+            if (!gitConfig.initialized) {
+                const action = await vscode.window.showWarningMessage(
+                    `Git repository not initialized for "${notebook.name}".\n\n` +
+                    `Configuration:\n` +
+                    `• Remote: ${gitConfig.remoteUrl}\n` +
+                    `• Branch: ${gitConfig.branch}\n` +
+                    `• Author: ${gitConfig.author.name} <${gitConfig.author.email}>\n\n` +
+                    `Please initialize the repository first.`,
+                    { modal: true },
+                    'Initialize Git',
+                    'Clone from Remote'
+                );
+
+                if (action === 'Initialize Git') {
+                    await vscode.commands.executeCommand('markdownNotes.gitInit', item);
+                } else if (action === 'Clone from Remote') {
+                    await vscode.commands.executeCommand('markdownNotes.gitClone', item);
+                }
                 return;
             }
-
-            const notebook = item.notebook;
 
             try {
                 const status = await gitManager.getStatus(notebook.id);
 
-                const lastSync = notebook.gitConfig?.lastSync
-                    ? new Date(notebook.gitConfig.lastSync).toLocaleString()
+                const lastSync = gitConfig.lastSync
+                    ? new Date(gitConfig.lastSync).toLocaleString()
                     : 'Never';
 
                 vscode.window.showInformationMessage(
