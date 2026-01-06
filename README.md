@@ -192,6 +192,8 @@ vsce package
 | `markdownNotes.gitPush` | Push to Remote |
 | `markdownNotes.gitSync` | Sync with Remote |
 | `markdownNotes.gitStatus` | View Git Status |
+| `markdownNotes.showGitOutput` | Show Git Output Logs |
+| `markdownNotes.revealInExplorer` | Reveal Notebook in File Explorer |
 | `markdownNotes.showGitOutput` | Show Git Operation Logs |
 
 ## Contributing

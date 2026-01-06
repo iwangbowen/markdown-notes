@@ -265,6 +265,27 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Register command: reveal notebook in file explorer
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.revealInExplorer', async (item: NotebookTreeItem) => {
+      if (!item || !item.notebook) {
+        vscode.window.showWarningMessage('Please select a notebook');
+        return;
+      }
+
+      try {
+        const notebookUri = storageManager.getNotebookUri(item.notebook.id);
+        const logger = Logger.getInstance();
+        logger.info(`Revealing notebook in file explorer: ${notebookUri.fsPath}`, 'Core');
+
+        // Open the folder in file explorer
+        await vscode.commands.executeCommand('revealFileInOS', notebookUri);
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to reveal in explorer: ${error}`);
+      }
+    })
+  );
+
   // Register Git commands
   const { registerGitCommands } = await import('./gitCommands');
   registerGitCommands(context, gitManager, notebookManager, () => treeProvider.refresh());

@@ -114,6 +114,18 @@
         "title": "View Git Status",
         "category": "Markdown Notes",
         "icon": "$(git-branch)"
+      },
+      {
+        "command": "markdownNotes.showGitOutput",
+        "title": "Show Git Output",
+        "category": "Markdown Notes",
+        "icon": "$(output)"
+      },
+      {
+        "command": "markdownNotes.revealInExplorer",
+        "title": "Reveal in File Explorer",
+        "category": "Markdown Notes",
+        "icon": "$(folder-opened)"
       }
     ],
     "menus": {
@@ -184,6 +196,16 @@
           "command": "markdownNotes.gitStatus",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "3_git@6"
+        },
+        {
+          "command": "markdownNotes.showGitOutput",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "git@6"
+        },
+        {
+          "command": "markdownNotes.revealInExplorer",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "9_utilities"
         },
         {
           "command": "markdownNotes.deleteNotebook",
