@@ -127,6 +127,11 @@ export class NotebookManager {
       const notes: Note[] = [];
 
       for (const [name, type] of entries) {
+        // Skip .git directory and other hidden files starting with .
+        if (name.startsWith('.')) {
+          continue;
+        }
+
         if (type === vscode.FileType.File && name.endsWith('.md')) {
           const noteUri = vscode.Uri.joinPath(targetUri, name);
           const stat = await vscode.workspace.fs.stat(noteUri);
@@ -196,6 +201,11 @@ export class NotebookManager {
       const folders: Folder[] = [];
 
       for (const [name, type] of entries) {
+        // Skip .git directory and other hidden directories starting with .
+        if (name.startsWith('.')) {
+          continue;
+        }
+
         if (type === vscode.FileType.Directory) {
           const folderPath = parentPath ? `${parentPath}/${name}` : name;
           const folderUri = vscode.Uri.joinPath(notebookUri, folderPath);

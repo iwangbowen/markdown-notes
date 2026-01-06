@@ -297,10 +297,24 @@ export class GitManager {
             ).length;
 
             // Get current branch
-            const branch = await git.currentBranch({ fs, dir, fullname: false }) || 'main';
+            let branch: string;
+            try {
+                branch = await git.currentBranch({ fs, dir, fullname: false }) || 'main';
+            } catch (error) {
+                // Branch doesn't exist yet (empty repo)
+                this.logger.warn('No branch found, using default: main', 'Git');
+                branch = 'main';
+            }
 
             // Get log to check unpushed commits
-            const commits = await git.log({ fs, dir, depth: 10 });
+            let commits: any[] = [];
+            try {
+                commits = await git.log({ fs, dir, depth: 10 });
+            } catch (error) {
+                // No commits yet (empty repo)
+                this.logger.debug('No commits found (empty repository)', 'Git');
+                commits = [];
+            }
 
             this.logger.info(`Status: ${uncommittedChanges} uncommitted changes, branch: ${branch}`, 'Git');
             this.logger.debug(`Recent commits: ${commits.length}`, 'Git');
