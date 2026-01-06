@@ -4,13 +4,13 @@ import { Notebook, Note } from './types';
 import { StorageManager } from './utils/storage';
 
 /**
- * 笔记本管理器
- * 负责笔记本和笔记的CRUD操作
+ * Notebook Manager
+ * Responsible for CRUD operations on notebooks and notes
  */
 export class NotebookManager {
   constructor(
     private storageManager: StorageManager
-  ) {}
+  ) { }
 
   /**
    * 创建新笔记本
@@ -44,7 +44,7 @@ export class NotebookManager {
     try {
       await vscode.workspace.fs.delete(notebookUri, { recursive: true });
     } catch (error) {
-      console.error('删除笔记本目录失败:', error);
+      console.error('Failed to delete notebook directory:', error);
     }
 
     // 从配置中删除
@@ -52,7 +52,7 @@ export class NotebookManager {
   }
 
   /**
-   * 获取所有笔记本
+   * Get all notebooks
    */
   async getNotebooks(): Promise<Notebook[]> {
     const config = await this.storageManager.getConfig();
@@ -60,19 +60,19 @@ export class NotebookManager {
   }
 
   /**
-   * 创建笔记
+   * Create note
    */
   async createNote(notebookId: string, name: string): Promise<Note> {
-    // 确保文件名有.md后缀
+    // Ensure filename has .md extension
     const fileName = name.endsWith('.md') ? name : `${name}.md`;
     const notebookUri = this.storageManager.getNotebookUri(notebookId);
     const noteUri = vscode.Uri.joinPath(notebookUri, fileName);
 
-    // 初始内容
+    // Initial content
     const content = `# ${name.replace(/\.md$/, '')}\n\n`;
     const buffer = Buffer.from(content, 'utf8');
 
-    // 写入文件
+    // Write file
     await vscode.workspace.fs.writeFile(noteUri, buffer);
 
     return {
@@ -85,7 +85,7 @@ export class NotebookManager {
   }
 
   /**
-   * 删除笔记
+   * Delete note
    */
   async deleteNote(noteUri: vscode.Uri): Promise<void> {
     await vscode.workspace.fs.delete(noteUri);
@@ -127,7 +127,7 @@ export class NotebookManager {
   }
 
   /**
-   * 打开笔记
+   * Open note
    */
   async openNote(noteUri: vscode.Uri): Promise<void> {
     const document = await vscode.workspace.openTextDocument(noteUri);
@@ -135,16 +135,16 @@ export class NotebookManager {
   }
 
   /**
-   * 验证笔记本名称
+   * Validate notebook name
    */
   async validateNotebookName(name: string): Promise<string | null> {
     if (!name.trim()) {
-      return '笔记本名称不能为空';
+      return 'Notebook name cannot be empty';
     }
 
     const notebooks = await this.getNotebooks();
     if (notebooks.some(n => n.name === name.trim())) {
-      return '笔记本名称已存在';
+      return 'Notebook name already exists';
     }
 
     return null;

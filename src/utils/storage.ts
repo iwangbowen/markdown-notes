@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import { GlobalConfig, Notebook } from '../types';
 
 /**
- * 存储管理器
- * 管理globalState和globalStorageUri的读写操作
+ * Storage Manager
+ * Manages read/write operations for globalState and globalStorageUri
  */
 export class StorageManager {
   private static readonly CONFIG_KEY = 'markdownNotes.config';
@@ -11,7 +11,7 @@ export class StorageManager {
 
   constructor(
     private context: vscode.ExtensionContext
-  ) {}
+  ) { }
 
   /**
    * 获取全局配置

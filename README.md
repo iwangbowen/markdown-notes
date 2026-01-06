@@ -1,145 +1,145 @@
 # Markdown Notes
 
-> 一个功能完善的 VS Code 笔记管理插件，支持多笔记本、树形视图和原生 Markdown 编辑器
+> A full-featured VS Code notes management extension with multi-notebook support, tree view, and native Markdown editor
 
-## ✨ 特性
+## Features
 
-- 📚 **多笔记本管理** - 支持创建多个笔记本，独立组织笔记内容
-- 🌲 **树形视图** - 在侧边栏以树形结构展示所有笔记本和笔记
-- ✏️ **原生编辑器** - 使用 VS Code 原生 Markdown 编辑器，完整支持预览、搜索等功能
-- 💾 **自动存储** - 使用 `globalStorageUri` 自动管理存储位置，无需手动配置
-- 🔄 **配置同步** - 笔记本配置通过 `globalState` 支持跨设备同步
-- 🎯 **零配置** - 开箱即用，无需任何配置
+- **Multi-notebook Management** - Create multiple notebooks to organize notes independently
+- **Tree View** - Display all notebooks and notes in a tree structure in the sidebar
+- **Native Editor** - Use VS Code's native Markdown editor with full preview and search support
+- **Automatic Storage** - Use `globalStorageUri` for automatic storage management, no manual configuration needed
+- **Configuration Sync** - Notebook configuration syncs across devices via `globalState`
+- **Zero Configuration** - Works out of the box, no setup required
 
-## 🚀 快速开始
+## Quick Start
 
-### 安装
+### Installation
 
-1. 在 VS Code 扩展市场搜索 "Markdown Notes"
-2. 点击安装
-3. 首次启动会引导您创建第一个笔记本
+1. Search for "Markdown Notes" in the VS Code Extensions Marketplace
+2. Click Install
+3. Click the Markdown Notes icon in the activity bar to get started
 
-### 使用
+### Usage
 
-#### 创建笔记本
+#### Create Notebook
 
-- 点击侧边栏 "Markdown Notes" 视图中的 ➕ 按钮
-- 输入笔记本名称（如：工作笔记、个人随想）
+- Click the + button in the "Markdown Notes" view in the sidebar
+- Enter notebook name (e.g., Work Notes, Personal Ideas)
 
-#### 创建笔记
+#### Create Note
 
-- 右键点击笔记本
-- 选择"创建笔记"
-- 输入笔记名称
-- 自动打开 Markdown 编辑器
+- Right-click on a notebook
+- Select "Create Note"
+- Enter note name
+- Markdown editor opens automatically
 
-#### 编辑笔记
+#### Edit Note
 
-- 点击笔记即可在编辑器中打开
-- 使用 VS Code 原生 Markdown 编辑器的所有功能
-- 支持预览、撤销、搜索、替换等
+- Click on a note to open it in the editor
+- Use all features of VS Code's native Markdown editor
+- Supports preview, undo, search, replace, etc.
 
-#### 删除操作
+#### Delete Operations
 
-- 右键笔记 → 删除笔记
-- 右键笔记本 → 删除笔记本（会提示笔记数量）
+- Right-click note → Delete Note
+- Right-click notebook → Delete Notebook (will show note count)
 
-## 📁 数据存储
+## Data Storage
 
-### 存储架构
+### Storage Architecture
 
-本插件采用双层存储架构，兼顾配置同步和文件管理：
+This extension uses a dual-layer storage architecture, balancing configuration sync and file management:
 
-| 存储方式 | 内容 | 位置 | 跨设备同步 |
-|---------|------|------|-----------|
-| `globalState` | 笔记本配置、元数据 | VS Code 设置 | ✅ 是 |
-| `globalStorageUri` | Markdown 文件 | 扩展数据目录 | ❌ 否 |
+| Storage Type | Content | Location | Cross-device Sync |
+|-------------|---------|----------|------------------|
+| `globalState` | Notebook config, metadata | VS Code settings | Yes |
+| `globalStorageUri` | Markdown files | Extension data directory | No |
 
-### 存储位置
+### Storage Location
 
-笔记文件自动存储在 VS Code 管理的目录中：
+Note files are automatically stored in VS Code managed directories:
 
 - **Windows**: `%APPDATA%/Code/User/globalStorage/markdown-notes.markdown-notes/`
 - **macOS**: `~/Library/Application Support/Code/User/globalStorage/markdown-notes.markdown-notes/`
 - **Linux**: `~/.config/Code/User/globalStorage/markdown-notes.markdown-notes/`
 
-> 💡 无需手动配置，VS Code 会自动管理这些目录
+> No manual configuration needed, VS Code manages these directories automatically
 
-### 目录结构
+### Directory Structure
 
 ```
 {globalStorageUri}/
 └── notebooks/
     ├── {notebook-id-1}/
-    │   ├── 会议记录.md
-    │   └── 项目计划.md
+    │   ├── Meeting Notes.md
+    │   └── Project Plan.md
     └── {notebook-id-2}/
-        └── 读书笔记.md
+        └── Reading Notes.md
 ```
 
-## 🎯 设计理念
+## Design Philosophy
 
-### 笔记即文件（File-first）
+### File-first Approach
 
-- 每条笔记 = 一个 `.md` 文件
-- 不自研编辑器，完全复用 VS Code 原生能力
-- 保证数据的可移植性和可读性
+- Each note = one `.md` file
+- No custom editor, fully leverage VS Code's native capabilities
+- Ensures data portability and readability
 
-### 零配置理念
+### Zero Configuration
 
-- 使用 VS Code 官方推荐的存储方案
-- 自动处理跨平台路径差异
-- 自动随扩展卸载清理
+- Use VS Code's officially recommended storage solutions
+- Automatically handle cross-platform path differences
+- Automatically clean up when extension is uninstalled
 
-### 未来扩展
+### Future Enhancements
 
-- 🔄 Git 同步支持（每个笔记本关联独立仓库）
-- 🏷️ 标签和分类
-- 🔍 全文搜索
-- 📊 统计分析
+- Git sync support (each notebook associates with independent repository)
+- Tags and categories
+- Full-text search
+- Statistics and analytics
 
-## 🛠️ 开发
+## Development
 
-### 本地开发
+### Local Development
 
 ```bash
-# 安装依赖
+# Install dependencies
 npm install
 
-# 编译
+# Compile
 npm run compile
 
-# 监听模式
+# Watch mode
 npm run watch
 
-# 在 VS Code 中按 F5 启动调试
+# Press F5 in VS Code to start debugging
 ```
 
-### 打包发布
+### Package and Publish
 
 ```bash
 npm install -g @vscode/vsce
 vsce package
 ```
 
-## 📝 命令列表
+## Command List
 
-| 命令 | 描述 |
-|------|------|
-| `markdownNotes.createNotebook` | 创建笔记本 |
-| `markdownNotes.createNote` | 创建笔记 |
-| `markdownNotes.deleteNote` | 删除笔记 |
-| `markdownNotes.deleteNotebook` | 删除笔记本 |
-| `markdownNotes.refreshTree` | 刷新树视图 |
+| Command | Description |
+|---------|-------------|
+| `markdownNotes.createNotebook` | Create Notebook |
+| `markdownNotes.createNote` | Create Note |
+| `markdownNotes.deleteNote` | Delete Note |
+| `markdownNotes.deleteNotebook` | Delete Notebook |
+| `markdownNotes.refreshTree` | Refresh Tree View |
 
-## 🤝 贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!
 
-## 📄 许可证
+## License
 
 MIT License
 
-## 🙏 致谢
+## Acknowledgments
 
-感谢 VS Code 团队提供优秀的扩展 API。
+Thanks to the VS Code team for providing excellent extension APIs.

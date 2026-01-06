@@ -26,7 +26,7 @@ export class NotebookTreeItem extends TreeItem {
 
     this.contextValue = 'notebookItem';
     this.iconPath = new vscode.ThemeIcon('notebook');
-    this.tooltip = `笔记本: ${notebook.name}`;
+    this.tooltip = `Notebook: ${notebook.name}`;
     this.id = `notebook-${notebook.id}`;
   }
 }
@@ -46,11 +46,11 @@ export class NoteTreeItem extends TreeItem {
     this.tooltip = note.name;
     this.id = `note-${note.notebookId}-${note.name}`;
 
-    // 点击时打开笔记
+    // Click to open note
     this.command = {
       command: 'vscode.open',
       arguments: [noteUri],
-      title: '打开笔记'
+      title: 'Open Note'
     };
 
     // 显示最后修改时间
@@ -66,19 +66,19 @@ export class NoteTreeItem extends TreeItem {
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (days === 0) {
-      return '今天';
+      return 'Today';
     } else if (days === 1) {
-      return '昨天';
+      return 'Yesterday';
     } else if (days < 7) {
-      return `${days}天前`;
+      return `${days}d ago`;
     } else {
-      return date.toLocaleDateString('zh-CN');
+      return date.toLocaleDateString('en-US');
     }
   }
 }
 
 /**
- * 树形视图数据提供者
+ * Tree view data provider
  */
 export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
   private _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined | null | void>();
@@ -86,33 +86,33 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
   constructor(
     private notebookManager: NotebookManager
-  ) {}
+  ) { }
 
   /**
-   * 刷新树形视图
+   * Refresh tree view
    */
   refresh(): void {
     this._onDidChangeTreeData.fire();
   }
 
   /**
-   * 获取树节点
+   * Get tree item
    */
   getTreeItem(element: TreeItem): vscode.TreeItem {
     return element;
   }
 
   /**
-   * 获取子节点
+   * Get children nodes
    */
   async getChildren(element?: TreeItem): Promise<TreeItem[]> {
     if (!element) {
-      // 根级别：返回所有笔记本
+      // Root level: return all notebooks
       return this.getNotebookItems();
     }
 
     if (element instanceof NotebookTreeItem) {
-      // 笔记本级别：返回该笔记本下的所有笔记
+      // Notebook level: return all notes under this notebook
       return this.getNoteItems(element.notebook.id);
     }
 
@@ -120,7 +120,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
   }
 
   /**
-   * 获取笔记本节点列表
+   * Get notebook item list
    */
   private async getNotebookItems(): Promise<NotebookTreeItem[]> {
     const notebooks = await this.notebookManager.getNotebooks();

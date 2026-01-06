@@ -1,7 +1,7 @@
 {
   "name": "markdown-notes",
   "displayName": "Markdown Notes",
-  "description": "多笔记本Markdown笔记管理工具，支持树形视图和原生编辑器",
+  "description": "Multi-notebook Markdown notes manager with tree view and native editor",
   "version": "0.1.0",
   "publisher": "markdown-notes",
   "engines": {
@@ -25,7 +25,7 @@
       "markdown-notes-container": [
         {
           "id": "markdownNotesView",
-          "name": "笔记列表",
+          "name": "Notes",
           "contextualTitle": "Markdown Notes"
         }
       ]
@@ -33,31 +33,31 @@
     "commands": [
       {
         "command": "markdownNotes.createNotebook",
-        "title": "创建笔记本",
+        "title": "Create Notebook",
         "category": "Markdown Notes",
         "icon": "$(add)"
       },
       {
         "command": "markdownNotes.createNote",
-        "title": "创建笔记",
+        "title": "Create Note",
         "category": "Markdown Notes",
         "icon": "$(new-file)"
       },
       {
         "command": "markdownNotes.deleteNote",
-        "title": "删除笔记",
+        "title": "Delete Note",
         "category": "Markdown Notes",
         "icon": "$(trash)"
       },
       {
         "command": "markdownNotes.deleteNotebook",
-        "title": "删除笔记本",
+        "title": "Delete Notebook",
         "category": "Markdown Notes",
         "icon": "$(trash)"
       },
       {
         "command": "markdownNotes.refreshTree",
-        "title": "刷新",
+        "title": "Refresh",
         "category": "Markdown Notes",
         "icon": "$(refresh)"
       }

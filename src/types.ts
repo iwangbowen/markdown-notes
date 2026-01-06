@@ -1,47 +1,47 @@
 /**
- * 笔记本接口
+ * Notebook interface
  */
 export interface Notebook {
-  /** 唯一标识符 */
+  /** Unique identifier */
   id: string;
-  /** 笔记本名称 */
+  /** Notebook name */
   name: string;
-  /** 创建时间戳 */
+  /** Creation timestamp */
   createdAt: number;
-  /** Git远程仓库地址（预留，未来功能） */
+  /** Git remote repository URL (reserved for future feature) */
   gitRemote?: string;
-  /** Git分支名（预留，未来功能） */
+  /** Git branch name (reserved for future feature) */
   gitBranch?: string;
-  /** 是否启用同步（预留，未来功能） */
+  /** Whether sync is enabled (reserved for future feature) */
   syncEnabled?: boolean;
-  /** 最后同步时间（预留，未来功能） */
+  /** Last sync time (reserved for future feature) */
   lastSyncTime?: number;
 }
 
 /**
- * 笔记接口
+ * Note interface
  */
 export interface Note {
-  /** 笔记名称（不含.md后缀） */
+  /** Note name (without .md extension) */
   name: string;
-  /** 所属笔记本ID */
+  /** Notebook ID this note belongs to */
   notebookId: string;
-  /** 文件URI路径 */
+  /** File URI path */
   uri: string;
-  /** 创建时间戳 */
+  /** Creation timestamp */
   createdAt?: number;
-  /** 最后修改时间戳 */
+  /** Last modified timestamp */
   updatedAt?: number;
 }
 
 /**
- * 全局配置接口（存储在globalState中，支持跨设备同步）
+ * Global configuration interface (stored in globalState, supports cross-device sync)
  */
 export interface GlobalConfig {
-  /** 笔记本列表 */
+  /** List of notebooks */
   notebooks: Notebook[];
-  /** 当前活动的笔记本ID */
+  /** Currently active notebook ID */
   activeNotebook?: string;
-  /** 配置版本号（用于未来迁移） */
+  /** Configuration version (for future migration) */
   version?: string;
 }
