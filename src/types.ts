@@ -19,6 +19,24 @@ export interface Notebook {
 }
 
 /**
+ * Folder interface
+ */
+export interface Folder {
+  /** Folder name */
+  name: string;
+  /** Notebook ID this folder belongs to */
+  notebookId: string;
+  /** Parent folder path (relative to notebook root, empty string for root level) */
+  parentPath: string;
+  /** Full folder path (relative to notebook root) */
+  path: string;
+  /** Folder URI */
+  uri: string;
+  /** Creation timestamp */
+  createdAt?: number;
+}
+
+/**
  * Note interface
  */
 export interface Note {
@@ -26,6 +44,8 @@ export interface Note {
   name: string;
   /** Notebook ID this note belongs to */
   notebookId: string;
+  /** Parent folder path (relative to notebook root, empty string for root level) */
+  folderPath: string;
   /** File URI path */
   uri: string;
   /** Creation timestamp */

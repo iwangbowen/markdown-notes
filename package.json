@@ -44,8 +44,20 @@
         "icon": "$(new-file)"
       },
       {
+        "command": "markdownNotes.createFolder",
+        "title": "Create Folder",
+        "category": "Markdown Notes",
+        "icon": "$(new-folder)"
+      },
+      {
         "command": "markdownNotes.deleteNote",
         "title": "Delete Note",
+        "category": "Markdown Notes",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "markdownNotes.deleteFolder",
+        "title": "Delete Folder",
         "category": "Markdown Notes",
         "icon": "$(trash)"
       },
@@ -82,13 +94,48 @@
           "group": "inline@1"
         },
         {
+          "command": "markdownNotes.createFolder",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "inline@2"
+        },
+        {
           "command": "markdownNotes.createNote",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "1_actions@1"
         },
         {
+          "command": "markdownNotes.createFolder",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "1_actions@2"
+        },
+        {
           "command": "markdownNotes.deleteNotebook",
           "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "2_delete@1"
+        },
+        {
+          "command": "markdownNotes.createNote",
+          "when": "view == markdownNotesView && viewItem == folderItem",
+          "group": "inline@1"
+        },
+        {
+          "command": "markdownNotes.createFolder",
+          "when": "view == markdownNotesView && viewItem == folderItem",
+          "group": "inline@2"
+        },
+        {
+          "command": "markdownNotes.createNote",
+          "when": "view == markdownNotesView && viewItem == folderItem",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "markdownNotes.createFolder",
+          "when": "view == markdownNotesView && viewItem == folderItem",
+          "group": "1_actions@2"
+        },
+        {
+          "command": "markdownNotes.deleteFolder",
+          "when": "view == markdownNotesView && viewItem == folderItem",
           "group": "2_delete@1"
         },
         {

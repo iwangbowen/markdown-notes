@@ -1,22 +1,22 @@
 import * as vscode from 'vscode';
-import { Notebook, Note } from './types';
+import { Notebook, Note, Folder } from './types';
 import { NotebookManager } from './notebookManager';
 
 /**
- * TreeView节点基类
+ * TreeView base node class
  */
 export class TreeItem extends vscode.TreeItem {
   constructor(
     label: string,
     collapsibleState: vscode.TreeItemCollapsibleState,
-    public readonly itemType: 'notebook' | 'note'
+    public readonly itemType: 'notebook' | 'folder' | 'note'
   ) {
     super(label, collapsibleState);
   }
 }
 
 /**
- * 笔记本节点
+ * Notebook tree item
  */
 export class NotebookTreeItem extends TreeItem {
   constructor(
@@ -32,7 +32,24 @@ export class NotebookTreeItem extends TreeItem {
 }
 
 /**
- * 笔记节点
+ * Folder tree item
+ */
+export class FolderTreeItem extends TreeItem {
+  constructor(
+    public readonly folder: Folder,
+    public readonly folderUri: vscode.Uri
+  ) {
+    super(folder.name, vscode.TreeItemCollapsibleState.Collapsed, 'folder');
+
+    this.contextValue = 'folderItem';
+    this.iconPath = new vscode.ThemeIcon('folder');
+    this.tooltip = folder.path;
+    this.id = `folder-${folder.notebookId}-${folder.path}`;
+  }
+}
+
+/**
+ * Note tree item
  */
 export class NoteTreeItem extends TreeItem {
   constructor(
@@ -53,7 +70,7 @@ export class NoteTreeItem extends TreeItem {
       title: 'Open Note'
     };
 
-    // 显示最后修改时间
+    // Display last modified time
     if (note.updatedAt) {
       const date = new Date(note.updatedAt);
       this.description = this.formatDate(date);
@@ -112,8 +129,13 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     }
 
     if (element instanceof NotebookTreeItem) {
-      // Notebook level: return all notes under this notebook
-      return this.getNoteItems(element.notebook.id);
+      // Notebook level: return folders and notes under this notebook
+      return this.getFolderAndNoteItems(element.notebook.id, '');
+    }
+
+    if (element instanceof FolderTreeItem) {
+      // Folder level: return folders and notes under this folder
+      return this.getFolderAndNoteItems(element.folder.notebookId, element.folder.path);
     }
 
     return [];
@@ -133,14 +155,28 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
   }
 
   /**
-   * 获取笔记节点列表
+   * Get folders and notes under a notebook or folder
    */
-  private async getNoteItems(notebookId: string): Promise<NoteTreeItem[]> {
-    const notes = await this.notebookManager.getNotes(notebookId);
+  private async getFolderAndNoteItems(notebookId: string, folderPath: string): Promise<TreeItem[]> {
+    const [folders, notes] = await Promise.all([
+      this.notebookManager.getFolders(notebookId, folderPath),
+      this.notebookManager.getNotes(notebookId, folderPath)
+    ]);
 
-    return notes.map(note => {
+    const items: TreeItem[] = [];
+
+    // Add folders first
+    for (const folder of folders) {
+      const uri = vscode.Uri.parse(folder.uri);
+      items.push(new FolderTreeItem(folder, uri));
+    }
+
+    // Then add notes
+    for (const note of notes) {
       const uri = vscode.Uri.parse(note.uri);
-      return new NoteTreeItem(note, uri);
-    });
+      items.push(new NoteTreeItem(note, uri));
+    }
+
+    return items;
   }
 }

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { StorageManager } from './utils/storage';
 import { NotebookManager } from './notebookManager';
-import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem } from './noteTreeProvider';
+import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem, FolderTreeItem } from './noteTreeProvider';
 
 /**
  * Extension activation function
@@ -50,12 +50,17 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register command: create note
   context.subscriptions.push(
-    vscode.commands.registerCommand('markdownNotes.createNote', async (item?: NotebookTreeItem) => {
+    vscode.commands.registerCommand('markdownNotes.createNote', async (item?: NotebookTreeItem | FolderTreeItem) => {
       let notebookId: string | undefined;
+      let folderPath: string = '';
 
-      // If called from context menu, use that notebook directly
+      // If called from context menu
       if (item instanceof NotebookTreeItem) {
         notebookId = item.notebook.id;
+        folderPath = '';
+      } else if (item instanceof FolderTreeItem) {
+        notebookId = item.folder.notebookId;
+        folderPath = item.folder.path;
       } else {
         // Otherwise, let user select notebook
         const notebooks = await notebookManager.getNotebooks();
@@ -90,7 +95,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
       if (name && notebookId) {
         try {
-          const note = await notebookManager.createNote(notebookId, name.trim());
+          const note = await notebookManager.createNote(notebookId, name.trim(), folderPath);
           treeProvider.refresh();
 
           // Auto open the newly created note
@@ -100,6 +105,63 @@ export async function activate(context: vscode.ExtensionContext) {
           vscode.window.showInformationMessage(`Note "${name}" created successfully`);
         } catch (error) {
           vscode.window.showErrorMessage(`Failed to create note: ${error}`);
+        }
+      }
+    })
+  );
+
+  // Register command: create folder
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.createFolder', async (item?: NotebookTreeItem | FolderTreeItem) => {
+      let notebookId: string | undefined;
+      let parentPath: string = '';
+
+      // If called from context menu
+      if (item instanceof NotebookTreeItem) {
+        notebookId = item.notebook.id;
+        parentPath = '';
+      } else if (item instanceof FolderTreeItem) {
+        notebookId = item.folder.notebookId;
+        parentPath = item.folder.path;
+      } else {
+        // Otherwise, let user select notebook
+        const notebooks = await notebookManager.getNotebooks();
+
+        if (notebooks.length === 0) {
+          vscode.window.showWarningMessage('Please create a notebook first');
+          return;
+        }
+
+        const selected = await vscode.window.showQuickPick(
+          notebooks.map(n => ({ label: n.name, id: n.id })),
+          { placeHolder: 'Select notebook' }
+        );
+
+        if (!selected) {
+          return;
+        }
+
+        notebookId = selected.id;
+      }
+
+      const name = await vscode.window.showInputBox({
+        prompt: 'Enter folder name',
+        placeHolder: 'e.g., Projects',
+        validateInput: (value) => {
+          if (!value.trim()) {
+            return 'Folder name cannot be empty';
+          }
+          return null;
+        }
+      });
+
+      if (name && notebookId) {
+        try {
+          await notebookManager.createFolder(notebookId, name.trim(), parentPath);
+          treeProvider.refresh();
+          vscode.window.showInformationMessage(`Folder "${name}" created successfully`);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to create folder: ${error}`);
         }
       }
     })
@@ -121,6 +183,27 @@ export async function activate(context: vscode.ExtensionContext) {
           vscode.window.showInformationMessage(`Note "${item.note.name}" deleted`);
         } catch (error) {
           vscode.window.showErrorMessage(`Failed to delete note: ${error}`);
+        }
+      }
+    })
+  );
+
+  // Register command: delete folder
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.deleteFolder', async (item: FolderTreeItem) => {
+      const answer = await vscode.window.showWarningMessage(
+        `Are you sure you want to delete folder "${item.folder.name}" and all its contents?`,
+        { modal: true },
+        'Delete'
+      );
+
+      if (answer === 'Delete') {
+        try {
+          await notebookManager.deleteFolder(item.folderUri);
+          treeProvider.refresh();
+          vscode.window.showInformationMessage(`Folder "${item.folder.name}" deleted`);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to delete folder: ${error}`);
         }
       }
     })

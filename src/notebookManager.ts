@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Notebook, Note } from './types';
+import { Notebook, Note, Folder } from './types';
 import { StorageManager } from './utils/storage';
 
 /**
@@ -62,11 +62,15 @@ export class NotebookManager {
   /**
    * Create note
    */
-  async createNote(notebookId: string, name: string): Promise<Note> {
+  async createNote(notebookId: string, name: string, folderPath: string = ''): Promise<Note> {
     // Ensure filename has .md extension
     const fileName = name.endsWith('.md') ? name : `${name}.md`;
     const notebookUri = this.storageManager.getNotebookUri(notebookId);
-    const noteUri = vscode.Uri.joinPath(notebookUri, fileName);
+
+    // Build note URI with folder path
+    const noteUri = folderPath
+      ? vscode.Uri.joinPath(notebookUri, folderPath, fileName)
+      : vscode.Uri.joinPath(notebookUri, fileName);
 
     // Initial content
     const content = `# ${name.replace(/\.md$/, '')}\n\n`;
@@ -78,6 +82,7 @@ export class NotebookManager {
     return {
       name: name.replace(/\.md$/, ''),
       notebookId,
+      folderPath,
       uri: noteUri.toString(),
       createdAt: Date.now(),
       updatedAt: Date.now()
@@ -92,23 +97,27 @@ export class NotebookManager {
   }
 
   /**
-   * 获取笔记本下的所有笔记
+   * Get all notes under notebook or folder
    */
-  async getNotes(notebookId: string): Promise<Note[]> {
+  async getNotes(notebookId: string, folderPath: string = ''): Promise<Note[]> {
     const notebookUri = this.storageManager.getNotebookUri(notebookId);
+    const targetUri = folderPath
+      ? vscode.Uri.joinPath(notebookUri, folderPath)
+      : notebookUri;
 
     try {
-      const entries = await vscode.workspace.fs.readDirectory(notebookUri);
+      const entries = await vscode.workspace.fs.readDirectory(targetUri);
       const notes: Note[] = [];
 
       for (const [name, type] of entries) {
         if (type === vscode.FileType.File && name.endsWith('.md')) {
-          const noteUri = vscode.Uri.joinPath(notebookUri, name);
+          const noteUri = vscode.Uri.joinPath(targetUri, name);
           const stat = await vscode.workspace.fs.stat(noteUri);
 
           notes.push({
             name: name.replace(/\.md$/, ''),
             notebookId,
+            folderPath,
             uri: noteUri.toString(),
             createdAt: stat.ctime,
             updatedAt: stat.mtime
@@ -116,12 +125,82 @@ export class NotebookManager {
         }
       }
 
-      // 按修改时间倒序排列
+      // Sort by modification time in descending order
       notes.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
       return notes;
     } catch (error) {
-      // 目录不存在或为空
+      // Directory doesn't exist or is empty
+      return [];
+    }
+  }
+
+  /**
+   * Create folder
+   */
+  async createFolder(notebookId: string, name: string, parentPath: string = ''): Promise<Folder> {
+    const notebookUri = this.storageManager.getNotebookUri(notebookId);
+
+    // Build folder path
+    const folderPath = parentPath ? `${parentPath}/${name}` : name;
+    const folderUri = vscode.Uri.joinPath(notebookUri, folderPath);
+
+    // Create directory
+    await vscode.workspace.fs.createDirectory(folderUri);
+
+    return {
+      name,
+      notebookId,
+      parentPath,
+      path: folderPath,
+      uri: folderUri.toString(),
+      createdAt: Date.now()
+    };
+  }
+
+  /**
+   * Delete folder
+   */
+  async deleteFolder(folderUri: vscode.Uri): Promise<void> {
+    await vscode.workspace.fs.delete(folderUri, { recursive: true });
+  }
+
+  /**
+   * Get all folders under notebook or parent folder
+   */
+  async getFolders(notebookId: string, parentPath: string = ''): Promise<Folder[]> {
+    const notebookUri = this.storageManager.getNotebookUri(notebookId);
+    const targetUri = parentPath
+      ? vscode.Uri.joinPath(notebookUri, parentPath)
+      : notebookUri;
+
+    try {
+      const entries = await vscode.workspace.fs.readDirectory(targetUri);
+      const folders: Folder[] = [];
+
+      for (const [name, type] of entries) {
+        if (type === vscode.FileType.Directory) {
+          const folderPath = parentPath ? `${parentPath}/${name}` : name;
+          const folderUri = vscode.Uri.joinPath(notebookUri, folderPath);
+          const stat = await vscode.workspace.fs.stat(folderUri);
+
+          folders.push({
+            name,
+            notebookId,
+            parentPath,
+            path: folderPath,
+            uri: folderUri.toString(),
+            createdAt: stat.ctime
+          });
+        }
+      }
+
+      // Sort by name
+      folders.sort((a, b) => a.name.localeCompare(b.name));
+
+      return folders;
+    } catch (error) {
+      // Directory doesn't exist or is empty
       return [];
     }
   }
