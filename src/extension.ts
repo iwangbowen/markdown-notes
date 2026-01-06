@@ -250,8 +250,9 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('markdownNotes.expandAll', async () => {
       const notebooks = await notebookManager.getNotebooks();
       for (const notebook of notebooks) {
-        const item = new NotebookTreeItem(notebook);
-        await treeView.reveal(item, { expand: 1, select: false, focus: false });
+        const notebookItem = new NotebookTreeItem(notebook);
+        // Expand with level 3 to show notebooks -> folders -> notes
+        await treeView.reveal(notebookItem, { expand: 3, select: false, focus: false });
       }
     })
   );
