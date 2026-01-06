@@ -14,6 +14,24 @@
 - **Configuration Sync** - Notebook configuration syncs across devices via `globalState`
 - **Zero Configuration** - Works out of the box, no setup required
 
+---
+
+## ☕ Support This Project
+
+**If you find this extension helpful, please consider supporting its development!**
+
+Your support helps maintain and improve this project, adding new features and fixing bugs.
+
+### 赞赏 / Donation
+
+<div align="center">
+  <img src="resources/wechat-pay.jpg" alt="微信赞赏码" width="200"/>
+  <br/>
+  <i>微信扫码赞赏 | WeChat Pay</i>
+</div>
+
+---
+
 ## Quick Start
 
 ### Installation
@@ -233,21 +251,6 @@ vsce package
 ## Contributing
 
 Issues and Pull Requests are welcome!
-
----
-
-## ☕ Support This Project
-
-If you find this extension helpful, consider buying me a coffee! Your support helps maintain and improve this project.
-
-### 赞赏 / Donation
-
-<div align="center">
-  <img src="resources/wechat-pay.jpg" alt="微信赞赏码" width="200"/>
-  <p><i>微信扫码赞赏 | WeChat Pay</i></p>
-</div>
-
----
 
 ## Technical Details
 
