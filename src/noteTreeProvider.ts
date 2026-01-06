@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Notebook, Note, Folder } from './types';
 import { NotebookManager } from './notebookManager';
+import { GitManager } from './gitManager';
 
 /**
  * TreeView base node class
@@ -16,18 +17,114 @@ export class TreeItem extends vscode.TreeItem {
 }
 
 /**
- * Notebook tree item
+ * Notebook tree item with Git status
  */
 export class NotebookTreeItem extends TreeItem {
+  private gitStatusChecked = false;
+
   constructor(
-    public readonly notebook: Notebook
+    public readonly notebook: Notebook,
+    private gitManager?: GitManager
   ) {
     super(notebook.name, vscode.TreeItemCollapsibleState.Collapsed, 'notebook');
 
     this.contextValue = 'notebookItem';
-    this.iconPath = new vscode.ThemeIcon('notebook');
-    this.tooltip = `Notebook: ${notebook.name}`;
     this.id = `notebook-${notebook.id}`;
+
+    // Set initial icon based on config (synchronous)
+    this.updateGitStatusSync();
+
+    // Update with actual Git status (asynchronous)
+    if (gitManager && notebook.gitConfig?.initialized) {
+      this.updateGitStatusAsync();
+    }
+  }
+
+  /**
+   * Update icon and decoration based on Git configuration (synchronous)
+   */
+  private updateGitStatusSync(): void {
+    const gitConfig = this.notebook.gitConfig;
+
+    if (!gitConfig) {
+      // No Git configuration
+      this.iconPath = new vscode.ThemeIcon('notebook');
+      this.tooltip = `Notebook: ${this.notebook.name}`;
+      this.description = '';
+      return;
+    }
+
+    if (!gitConfig.initialized) {
+      // Git configured but not initialized
+      this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.yellow'));
+      this.tooltip = `${this.notebook.name}\n⚠️ Git configured but not initialized\nRemote: ${gitConfig.remoteUrl}\nBranch: ${gitConfig.branch}`;
+      this.description = '$(warning) Not initialized';
+      return;
+    }
+
+    // Git initialized (will be updated by async check)
+    const lastSyncText = gitConfig.lastSync
+      ? `Last sync: ${new Date(gitConfig.lastSync).toLocaleString()}`
+      : 'Not synced yet';
+
+    this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.green'));
+    this.tooltip = `${this.notebook.name}\n✓ Git initialized\nRemote: ${gitConfig.remoteUrl}\nBranch: ${gitConfig.branch}\n${lastSyncText}`;
+    this.description = `$(repo) ${gitConfig.branch}`;
+  }
+
+  /**
+   * Update icon with actual Git status (asynchronous)
+   */
+  private async updateGitStatusAsync(): Promise<void> {
+    if (!this.gitManager || this.gitStatusChecked) {
+      return;
+    }
+
+    try {
+      const status = await this.gitManager.getStatus(this.notebook.id);
+      this.gitStatusChecked = true;
+
+      const gitConfig = this.notebook.gitConfig!;
+      const lastSyncText = gitConfig.lastSync
+        ? `Last sync: ${new Date(gitConfig.lastSync).toLocaleString()}`
+        : 'Not synced yet';
+
+      // Build status indicators
+      const statusIndicators: string[] = [];
+
+      if (status.uncommittedChanges > 0) {
+        statusIndicators.push(`$(sync-ignored) ${status.uncommittedChanges}`);
+      }
+
+      if (status.unpushedCommits > 0) {
+        statusIndicators.push(`$(arrow-up) ${status.unpushedCommits}`);
+      }
+
+      // Update description
+      if (statusIndicators.length > 0) {
+        this.description = `$(repo) ${gitConfig.branch}  ${statusIndicators.join(' ')}`;
+
+        // Use orange color to indicate pending changes
+        this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.orange'));
+      } else {
+        // All synced - green
+        this.description = `$(repo) ${gitConfig.branch}`;
+        this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.green'));
+      }
+
+      // Update tooltip with detailed status
+      this.tooltip =
+        `${this.notebook.name}\n` +
+        `✓ Git initialized\n` +
+        `Remote: ${gitConfig.remoteUrl}\n` +
+        `Branch: ${gitConfig.branch}\n` +
+        `Uncommitted changes: ${status.uncommittedChanges}\n` +
+        `Unpushed commits: ${status.unpushedCommits}\n` +
+        `${lastSyncText}`;
+
+    } catch (error) {
+      // Fail silently, keep the synchronous status
+    }
   }
 }
 
@@ -105,7 +202,8 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
   private parentMap = new Map<string, TreeItem>();
 
   constructor(
-    private notebookManager: NotebookManager
+    private notebookManager: NotebookManager,
+    private gitManager?: GitManager  // Optional: for Git status checking
   ) { }
 
   /**
@@ -178,7 +276,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
       return [];
     }
 
-    return notebooks.map(notebook => new NotebookTreeItem(notebook));
+    return notebooks.map(notebook => new NotebookTreeItem(notebook, this.gitManager));
   }
 
   /**
