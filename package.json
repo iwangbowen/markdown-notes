@@ -86,6 +86,18 @@
         "icon": "$(gear)"
       },
       {
+        "command": "markdownNotes.gitInit",
+        "title": "Initialize Git Repository",
+        "category": "Markdown Notes",
+        "icon": "$(repo)"
+      },
+      {
+        "command": "markdownNotes.gitClone",
+        "title": "Clone Git Repository",
+        "category": "Markdown Notes",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "markdownNotes.gitCommit",
         "title": "Commit Changes",
         "category": "Markdown Notes",
@@ -173,29 +185,39 @@
           "group": "3_git@1"
         },
         {
-          "command": "markdownNotes.gitCommit",
+          "command": "markdownNotes.gitInit",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "3_git@2"
         },
         {
-          "command": "markdownNotes.gitPull",
+          "command": "markdownNotes.gitClone",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "3_git@3"
         },
         {
-          "command": "markdownNotes.gitPush",
+          "command": "markdownNotes.gitCommit",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "3_git@4"
         },
         {
-          "command": "markdownNotes.gitSync",
+          "command": "markdownNotes.gitPull",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "3_git@5"
         },
         {
-          "command": "markdownNotes.gitStatus",
+          "command": "markdownNotes.gitPush",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "3_git@6"
+        },
+        {
+          "command": "markdownNotes.gitSync",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@7"
+        },
+        {
+          "command": "markdownNotes.gitStatus",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@8"
         },
         {
           "command": "markdownNotes.showOutput",

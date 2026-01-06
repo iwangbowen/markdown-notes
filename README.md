@@ -45,6 +45,8 @@
 
 #### Git Synchronization
 
+> **Cross-Device Workflow**: When you sync VS Code settings to a new device, the extension will automatically detect notebooks that need initialization and prompt you to clone them.
+
 1. **Configure Git Repository**:
    - Right-click on a notebook
    - Select "Configure Git Repository"
@@ -54,35 +56,66 @@
    - Choose authentication method:
      - Personal Access Token (recommended)
      - Username + Password
-   - Choose initialization method:
-     - Clone from remote
-     - Initialize local repository
+   - **Note**: This only saves configuration. You need to initialize or clone separately.
 
-2. **Commit Changes**:
+2. **Initialize or Clone**:
+
+   **Option A - Initialize Git** (Create new local repository):
+   - Right-click on a notebook (that has Git configured)
+   - Select "Initialize Git Repository"
+   - Creates an empty `.git` repository
+   - Use this when starting a new notebook
+
+   **Option B - Clone Git** (Download from remote):
+   - Right-click on a notebook (that has Git configured)
+   - Select "Clone Git Repository"
+   - Downloads all files from remote repository
+   - Use this when setting up on a new device
+
+3. **Commit Changes**:
    - Right-click on a notebook
    - Select "Commit Changes"
    - Enter commit message
    - Changes are committed locally
 
-3. **Pull from Remote**:
+4. **Pull from Remote**:
    - Right-click on a notebook
    - Select "Pull from Remote"
    - Latest changes are pulled from remote repository
 
-4. **Push to Remote**:
+5. **Push to Remote**:
    - Right-click on a notebook
    - Select "Push to Remote"
    - Local commits are pushed to remote repository
 
-5. **Sync (Pull + Push)**:
+6. **Sync (Pull + Push)**:
    - Right-click on a notebook
    - Select "Sync with Remote"
    - Automatically pulls and pushes changes
 
-6. **View Git Status**:
+7. **View Git Status**:
    - Right-click on a notebook
    - Select "View Git Status"
    - Shows uncommitted changes, unpushed commits, and last sync time
+
+**Recommended Workflow**:
+
+```
+Device A (First time):
+1. Create Notebook
+2. Configure Git → Save metadata
+3. Initialize Git → Create local .git/
+4. Create notes → Write content
+5. Commit Changes → Commit to local
+6. Push to Remote → Upload to GitHub
+
+Device B (New device):
+1. Open VS Code → Settings Sync auto-syncs notebook config
+2. Extension detects uninitialized notebook → Shows prompt
+3. Click "Clone Now" → Downloads all files from GitHub
+4. Start working → Edit notes
+5. Commit & Push → Sync changes back
+```
 
 #### Edit Note
 
@@ -186,7 +219,9 @@ vsce package
 | `markdownNotes.deleteNotebook` | Delete Notebook |
 | `markdownNotes.refreshTree` | Refresh Tree View |
 | `markdownNotes.expandAll` | Expand All Notebooks |
-| `markdownNotes.configureGit` | Configure Git Repository |
+| `markdownNotes.configureGit` | Configure Git Repository (metadata only) |
+| `markdownNotes.gitInit` | Initialize Git Repository (create local .git) |
+| `markdownNotes.gitClone` | Clone Git Repository (download from remote) |
 | `markdownNotes.gitCommit` | Commit Changes |
 | `markdownNotes.gitPull` | Pull from Remote |
 | `markdownNotes.gitPush` | Push to Remote |
@@ -194,7 +229,6 @@ vsce package
 | `markdownNotes.gitStatus` | View Git Status |
 | `markdownNotes.showOutput` | Show Output Logs |
 | `markdownNotes.revealInExplorer` | Reveal Notebook in File Explorer |
-| `markdownNotes.showGitOutput` | Show Git Operation Logs |
 
 ## Contributing
 

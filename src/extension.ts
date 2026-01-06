@@ -7,6 +7,80 @@ import { GitManager } from './gitManager';
 import { GitConfig } from './types';
 
 /**
+ * Check for uninitialized notebooks (cross-device sync scenario)
+ */
+async function checkUninitializedNotebooks(
+  notebookManager: NotebookManager,
+  gitManager: GitManager,
+  treeProvider: NoteTreeProvider,
+  treeView: vscode.TreeView<any>
+): Promise<void> {
+  const logger = Logger.getInstance();
+  logger.debug('Checking for uninitialized notebooks...', 'Core');
+
+  const notebooks = await notebookManager.getNotebooks();
+  const uninitializedNotebooks = [];
+
+  for (const notebook of notebooks) {
+    const hasConfig = !!notebook.gitConfig;
+    const isInitialized = await gitManager.isInitialized(notebook.id);
+
+    // Scenario 1: Has config but not initialized (cross-device sync)
+    if (hasConfig && !isInitialized) {
+      uninitializedNotebooks.push(notebook);
+      logger.info(`Found uninitialized notebook: ${notebook.name} (synced from another device)`, 'Core');
+    }
+
+    // Scenario 2: Has config and initialized, but flag is wrong
+    if (hasConfig && isInitialized && !notebook.gitConfig!.initialized) {
+      logger.info(`Fixing initialized flag for notebook: ${notebook.name}`, 'Core');
+      notebook.gitConfig!.initialized = true;
+      await notebookManager.updateNotebook(notebook);
+    }
+  }
+
+  // Prompt user to clone if there are uninitialized notebooks
+  if (uninitializedNotebooks.length > 0) {
+    const notebookNames = uninitializedNotebooks.map(n => n.name).join(', ');
+    const message = uninitializedNotebooks.length === 1
+      ? `Notebook "${notebookNames}" is synced from another device. Clone to download files?`
+      : `${uninitializedNotebooks.length} notebooks (${notebookNames}) are synced from other devices. Clone them?`;
+
+    const action = await vscode.window.showInformationMessage(
+      message,
+      'Clone Now',
+      'Later'
+    );
+
+    if (action === 'Clone Now') {
+      // Clone all uninitialized notebooks
+      for (const notebook of uninitializedNotebooks) {
+        try {
+          await vscode.window.withProgress({
+            location: vscode.ProgressLocation.Notification,
+            title: `Cloning notebook: ${notebook.name}...`,
+            cancellable: false
+          }, async () => {
+            await gitManager.cloneRepository(notebook.id, notebook.gitConfig!);
+            notebook.gitConfig!.initialized = true;
+            await notebookManager.updateNotebook(notebook);
+          });
+
+          logger.info(`Successfully cloned notebook: ${notebook.name}`, 'Core');
+        } catch (error) {
+          logger.error(`Failed to clone notebook ${notebook.name}: ${error}`, 'Core');
+          vscode.window.showErrorMessage(`Failed to clone "${notebook.name}": ${error}`);
+        }
+      }
+
+      // Refresh tree view
+      treeProvider.refresh();
+      vscode.window.showInformationMessage(`Cloned ${uninitializedNotebooks.length} notebook(s) successfully`);
+    }
+  }
+}
+
+/**
  * Extension activation function
  */
 export async function activate(context: vscode.ExtensionContext) {
@@ -32,6 +106,9 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   context.subscriptions.push(treeView);
+
+  // Auto-detect uninitialized notebooks (for cross-device sync)
+  await checkUninitializedNotebooks(notebookManager, gitManager, treeProvider, treeView);
 
   // Register command: create notebook
   context.subscriptions.push(

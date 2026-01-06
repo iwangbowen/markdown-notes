@@ -193,7 +193,7 @@ export function registerGitCommands(
     refreshTree: () => void
 ): void {
 
-    // Command: Configure Git Repository
+    // Command: Configure Git Repository (only save config, no initialization)
     context.subscriptions.push(
         vscode.commands.registerCommand('markdownNotes.configureGit', async (item: NotebookTreeItem) => {
             gitManager.showOutput(); // Show output channel for logs
@@ -215,7 +215,7 @@ export function registerGitCommands(
             // Save credentials
             await gitManager.storeCredentials(notebook.id, credentials);
 
-            // Create git config
+            // Create git config (but don't initialize yet)
             const gitConfig: GitConfig = {
                 remoteUrl,
                 branch,
@@ -223,58 +223,97 @@ export function registerGitCommands(
                     name: authorName,
                     email: authorEmail
                 },
-                initialized: false
+                initialized: false  // Not initialized yet
             };
 
             // Update notebook with git config
             notebook.gitConfig = gitConfig;
             await notebookManager.updateNotebook(notebook);
 
-            // Initialize or clone repository
-            const isInitialized = await gitManager.isInitialized(notebook.id);
+            refreshTree();
+            vscode.window.showInformationMessage(
+                'Git configuration saved. Use "Initialize Git" or "Clone Git" to set up the repository.'
+            );
+        })
+    );
 
-            if (!isInitialized) {
-                const choice = await vscode.window.showQuickPick(
-                    [
-                        { label: '$(cloud-download) Clone from remote', value: 'clone', description: 'Download existing repository' },
-                        { label: '$(repo) Initialize local repository', value: 'init', description: 'Create new local repository' }
-                    ],
-                    {
-                        title: 'Repository Initialization',
-                        placeHolder: 'Choose how to initialize the repository'
-                    }
-                );
-
-                if (choice?.value === 'clone') {
-                    try {
-                        await vscode.window.withProgress({
-                            location: vscode.ProgressLocation.Notification,
-                            title: 'Cloning repository...',
-                            cancellable: false
-                        }, async () => {
-                            await gitManager.cloneRepository(notebook.id, gitConfig);
-                        });
-
-                        gitConfig.initialized = true;
-                        notebook.gitConfig = gitConfig;
-                        await notebookManager.updateNotebook(notebook);
-                    } catch (error) {
-                        vscode.window.showErrorMessage(`Failed to clone: ${error}`);
-                    }
-                } else if (choice?.value === 'init') {
-                    try {
-                        await gitManager.initRepository(notebook.id, gitConfig);
-                        gitConfig.initialized = true;
-                        notebook.gitConfig = gitConfig;
-                        await notebookManager.updateNotebook(notebook);
-                    } catch (error) {
-                        vscode.window.showErrorMessage(`Failed to initialize: ${error}`);
-                    }
-                }
+    // Command: Initialize Git Repository (create empty repo)
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdownNotes.gitInit', async (item: NotebookTreeItem) => {
+            if (!item || !item.notebook.gitConfig) {
+                vscode.window.showWarningMessage('Please configure Git first');
+                return;
             }
 
-            refreshTree();
-            vscode.window.showInformationMessage('Git configuration saved');
+            const notebook = item.notebook;
+            const gitConfig = notebook.gitConfig!;  // Non-null assertion since we checked above
+
+            // Check if already initialized
+            const isInitialized = await gitManager.isInitialized(notebook.id);
+            if (isInitialized) {
+                vscode.window.showWarningMessage('Git repository is already initialized');
+                return;
+            }
+
+            try {
+                await vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: 'Initializing git repository...',
+                    cancellable: false
+                }, async () => {
+                    await gitManager.initRepository(notebook.id, gitConfig);
+                });
+
+                // Mark as initialized
+                gitConfig.initialized = true;
+                notebook.gitConfig = gitConfig;
+                await notebookManager.updateNotebook(notebook);
+
+                refreshTree();
+                vscode.window.showInformationMessage('Git repository initialized successfully');
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to initialize: ${error}`);
+            }
+        })
+    );
+
+    // Command: Clone Git Repository (download from remote)
+    context.subscriptions.push(
+        vscode.commands.registerCommand('markdownNotes.gitClone', async (item: NotebookTreeItem) => {
+            if (!item || !item.notebook.gitConfig) {
+                vscode.window.showWarningMessage('Please configure Git first');
+                return;
+            }
+
+            const notebook = item.notebook;
+            const gitConfig = notebook.gitConfig!;  // Non-null assertion since we checked above
+
+            // Check if already initialized
+            const isInitialized = await gitManager.isInitialized(notebook.id);
+            if (isInitialized) {
+                vscode.window.showWarningMessage('Git repository is already initialized. Use "Pull" to update.');
+                return;
+            }
+
+            try {
+                await vscode.window.withProgress({
+                    location: vscode.ProgressLocation.Notification,
+                    title: 'Cloning repository from remote...',
+                    cancellable: false
+                }, async () => {
+                    await gitManager.cloneRepository(notebook.id, gitConfig);
+                });
+
+                // Mark as initialized
+                gitConfig.initialized = true;
+                notebook.gitConfig = gitConfig;
+                await notebookManager.updateNotebook(notebook);
+
+                refreshTree();
+                vscode.window.showInformationMessage('Git repository cloned successfully');
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to clone: ${error}`);
+            }
         })
     );
 
@@ -283,6 +322,12 @@ export function registerGitCommands(
         vscode.commands.registerCommand('markdownNotes.gitCommit', async (item: NotebookTreeItem) => {
             if (!item || !item.notebook.gitConfig) {
                 vscode.window.showWarningMessage('Please configure Git first');
+                return;
+            }
+
+            // Check if git is initialized
+            if (!item.notebook.gitConfig.initialized) {
+                vscode.window.showWarningMessage('Please initialize git repository first (Configure Git → Choose Init/Clone)');
                 return;
             }
 
@@ -322,6 +367,12 @@ export function registerGitCommands(
                 return;
             }
 
+            // Check if git is initialized
+            if (!item.notebook.gitConfig.initialized) {
+                vscode.window.showWarningMessage('Please initialize git repository first (Configure Git → Choose Init/Clone)');
+                return;
+            }
+
             const notebook = item.notebook;
 
             try {
@@ -349,6 +400,12 @@ export function registerGitCommands(
         vscode.commands.registerCommand('markdownNotes.gitPush', async (item: NotebookTreeItem) => {
             if (!item || !item.notebook.gitConfig) {
                 vscode.window.showWarningMessage('Please configure Git first');
+                return;
+            }
+
+            // Check if git is initialized
+            if (!item.notebook.gitConfig.initialized) {
+                vscode.window.showWarningMessage('Please initialize git repository first (Configure Git → Choose Init/Clone)');
                 return;
             }
 
@@ -382,6 +439,12 @@ export function registerGitCommands(
                 return;
             }
 
+            // Check if git is initialized
+            if (!item.notebook.gitConfig.initialized) {
+                vscode.window.showWarningMessage('Please initialize git repository first (Configure Git → Choose Init/Clone)');
+                return;
+            }
+
             const notebook = item.notebook;
 
             try {
@@ -411,6 +474,12 @@ export function registerGitCommands(
 
             if (!item || !item.notebook.gitConfig) {
                 vscode.window.showWarningMessage('Please configure Git first');
+                return;
+            }
+
+            // Check if git is initialized
+            if (!item.notebook.gitConfig.initialized) {
+                vscode.window.showWarningMessage('Please initialize git repository first (Configure Git → Choose Init/Clone)');
                 return;
             }
 

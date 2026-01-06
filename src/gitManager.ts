@@ -80,7 +80,7 @@ export class GitManager {
      * Get notebook directory path
      */
     private getNotebookDir(notebookId: string): string {
-        return path.join(this.globalStorageUri.fsPath, notebookId);
+        return path.join(this.globalStorageUri.fsPath, 'notebooks', notebookId);
     }
 
     /**
