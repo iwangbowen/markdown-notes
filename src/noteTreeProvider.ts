@@ -134,12 +134,14 @@ export class NotebookTreeItem extends TreeItem {
 export class FolderTreeItem extends TreeItem {
   constructor(
     public readonly folder: Folder,
-    public readonly folderUri: vscode.Uri
+    public readonly folderUri: vscode.Uri,
+    folderIconPath?: vscode.Uri  // Optional custom icon
   ) {
     super(folder.name, vscode.TreeItemCollapsibleState.Collapsed, 'folder');
 
     this.contextValue = 'folderItem';
-    this.iconPath = new vscode.ThemeIcon('folder');
+    // Use custom icon if provided, otherwise use default ThemeIcon
+    this.iconPath = folderIconPath || new vscode.ThemeIcon('folder');
     this.tooltip = folder.path;
     this.id = `folder-${folder.notebookId}-${folder.path}`;
 
@@ -206,11 +208,16 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
 
   // Cache for parent relationships
   private parentMap = new Map<string, TreeItem>();
+  private folderIconPath: vscode.Uri;
 
   constructor(
+    private context: vscode.ExtensionContext,
     private notebookManager: NotebookManager,
     private gitManager?: GitManager  // Optional: for Git status checking
-  ) { }
+  ) {
+    // Set custom folder icon path
+    this.folderIconPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'folder.svg');
+  }
 
   /**
    * Refresh tree view
@@ -301,7 +308,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
       // Always use file: scheme URI by reconstructing from the stored URI's fsPath
       const parsedUri = vscode.Uri.parse(folder.uri);
       const fileUri = vscode.Uri.file(parsedUri.fsPath);
-      items.push(new FolderTreeItem(folder, fileUri));
+      items.push(new FolderTreeItem(folder, fileUri, this.folderIconPath));
     }
 
     // Then add notes

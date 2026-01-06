@@ -99,7 +99,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const gitManager = new GitManager(context, storageManager.getStorageUri());
 
   // Initialize TreeView
-  const treeProvider = new NoteTreeProvider(notebookManager, gitManager);
+  const treeProvider = new NoteTreeProvider(context, notebookManager, gitManager);
   const treeView = vscode.window.createTreeView('markdownNotesView', {
     treeDataProvider: treeProvider,
     showCollapseAll: true
