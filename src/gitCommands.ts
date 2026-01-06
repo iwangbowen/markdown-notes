@@ -196,7 +196,6 @@ export function registerGitCommands(
     // Command: Configure Git Repository (only save config, no initialization)
     context.subscriptions.push(
         vscode.commands.registerCommand('markdownNotes.configureGit', async (item: NotebookTreeItem) => {
-            gitManager.showOutput(); // Show output channel for logs
             if (!item) {
                 vscode.window.showWarningMessage('Please select a notebook');
                 return;
@@ -470,8 +469,6 @@ export function registerGitCommands(
     // Command: View git status
     context.subscriptions.push(
         vscode.commands.registerCommand('markdownNotes.gitStatus', async (item: NotebookTreeItem) => {
-            gitManager.showOutput(); // Show output for status details
-
             if (!item || !item.notebook.gitConfig) {
                 vscode.window.showWarningMessage('Please configure Git first');
                 return;
@@ -518,7 +515,6 @@ export function registerGitCommands(
                     { modal: true }
                 );
             } catch (error) {
-                gitManager.showOutput(); // Auto-show on error
                 vscode.window.showErrorMessage(`Failed to get status: ${error}`);
             }
         })
