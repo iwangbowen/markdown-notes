@@ -56,9 +56,9 @@ export class NotebookTreeItem extends TreeItem {
 
     if (!gitConfig.initialized) {
       // Git configured but not initialized
-      this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.yellow'));
+      this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('charts.yellow'));
       this.tooltip = `${this.notebook.name}\n⚠️ Git configured but not initialized\nRemote: ${gitConfig.remoteUrl}\nBranch: ${gitConfig.branch}`;
-      this.description = '$(warning) Not initialized';
+      this.description = 'Not initialized';
       return;
     }
 
@@ -69,7 +69,7 @@ export class NotebookTreeItem extends TreeItem {
 
     this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.green'));
     this.tooltip = `${this.notebook.name}\n✓ Git initialized\nRemote: ${gitConfig.remoteUrl}\nBranch: ${gitConfig.branch}\n${lastSyncText}`;
-    this.description = `$(repo) ${gitConfig.branch}`;
+    this.description = `⎇ ${gitConfig.branch}`;
   }
 
   /**
@@ -93,22 +93,22 @@ export class NotebookTreeItem extends TreeItem {
       const statusIndicators: string[] = [];
 
       if (status.uncommittedChanges > 0) {
-        statusIndicators.push(`$(sync-ignored) ${status.uncommittedChanges}`);
+        statusIndicators.push(`● ${status.uncommittedChanges}`);
       }
 
       if (status.unpushedCommits > 0) {
-        statusIndicators.push(`$(arrow-up) ${status.unpushedCommits}`);
+        statusIndicators.push(`↑ ${status.unpushedCommits}`);
       }
 
       // Update description
       if (statusIndicators.length > 0) {
-        this.description = `$(repo) ${gitConfig.branch}  ${statusIndicators.join(' ')}`;
+        this.description = `⎇ ${gitConfig.branch}  ${statusIndicators.join(' ')}`;
 
         // Use orange color to indicate pending changes
         this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.orange'));
       } else {
         // All synced - green
-        this.description = `$(repo) ${gitConfig.branch}`;
+        this.description = `⎇ ${gitConfig.branch}`;
         this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.green'));
       }
 
