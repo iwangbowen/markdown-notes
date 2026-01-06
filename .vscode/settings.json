@@ -1,0 +1,13 @@
+{
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "files.exclude": {
+        "out": false,
+        "node_modules": true
+    },
+    "search.exclude": {
+        "out": true,
+        "node_modules": true
+    }
+}

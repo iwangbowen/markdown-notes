@@ -1,0 +1,117 @@
+{
+  "name": "markdown-notes",
+  "displayName": "Markdown Notes",
+  "description": "多笔记本Markdown笔记管理工具，支持树形视图和原生编辑器",
+  "version": "0.1.0",
+  "publisher": "markdown-notes",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "markdown-notes-container",
+          "title": "Markdown Notes",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "markdown-notes-container": [
+        {
+          "id": "markdownNotesView",
+          "name": "笔记列表",
+          "contextualTitle": "Markdown Notes"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "markdownNotes.createNotebook",
+        "title": "创建笔记本",
+        "category": "Markdown Notes",
+        "icon": "$(add)"
+      },
+      {
+        "command": "markdownNotes.createNote",
+        "title": "创建笔记",
+        "category": "Markdown Notes",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "markdownNotes.deleteNote",
+        "title": "删除笔记",
+        "category": "Markdown Notes",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "markdownNotes.deleteNotebook",
+        "title": "删除笔记本",
+        "category": "Markdown Notes",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "markdownNotes.refreshTree",
+        "title": "刷新",
+        "category": "Markdown Notes",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "markdownNotes.createNotebook",
+          "when": "view == markdownNotesView",
+          "group": "navigation@1"
+        },
+        {
+          "command": "markdownNotes.refreshTree",
+          "when": "view == markdownNotesView",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "markdownNotes.createNote",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "inline@1"
+        },
+        {
+          "command": "markdownNotes.createNote",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "1_actions@1"
+        },
+        {
+          "command": "markdownNotes.deleteNotebook",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "2_delete@1"
+        },
+        {
+          "command": "markdownNotes.deleteNote",
+          "when": "view == markdownNotesView && viewItem == noteItem",
+          "group": "1_actions@1"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  }
+}
