@@ -2,7 +2,7 @@
   "name": "markdown-notes",
   "displayName": "Markdown Notes Manager",
   "description": "Multi-notebook Markdown notes manager with tree view and native editor",
-  "version": "0.2.0",
+  "version": "0.1.4",
   "publisher": "WangBowen",
   "icon": "resources/icon.png",
   "repository": {
@@ -22,7 +22,7 @@
     "tree view"
   ],
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.98.0"
   },
   "categories": [
     "Other"
@@ -296,7 +296,7 @@
   },
   "devDependencies": {
     "@types/node": "20.x",
-    "@types/vscode": "^1.107.0",
+    "@types/vscode": "^1.98.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "@vscode/vsce": "^3.7.1",
