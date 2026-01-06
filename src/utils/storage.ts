@@ -11,7 +11,11 @@ export class StorageManager {
 
   constructor(
     private context: vscode.ExtensionContext
-  ) { }
+  ) {
+    // Enable cross-device sync for globalState
+    // This allows notebook configurations to sync across devices via VS Code Settings Sync
+    this.context.globalState.setKeysForSync([StorageManager.CONFIG_KEY]);
+  }
 
   /**
    * 获取全局配置
