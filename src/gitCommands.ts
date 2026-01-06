@@ -30,6 +30,7 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
         prompt: 'Enter Git repository URL (HTTPS)',
         placeHolder: 'https://github.com/username/repo.git',
         value: existingConfig?.remoteUrl || '',
+        ignoreFocusOut: true,  // 防止失去焦点时关闭
         validateInput: (value) => {
             if (!value.trim()) {
                 return 'Repository URL cannot be empty';
@@ -41,7 +42,9 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
         }
     });
 
-    if (!remoteUrl) { return undefined; }
+    if (remoteUrl === undefined) {
+        return undefined;  // 用户取消
+    }
     state.remoteUrl = remoteUrl;
 
     // Step 2: Branch
@@ -49,10 +52,19 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
         title: 'Git Configuration (Step 2/5)',
         prompt: 'Enter branch name',
         placeHolder: 'main',
-        value: existingConfig?.branch || 'main'
+        value: existingConfig?.branch || 'main',
+        ignoreFocusOut: true,
+        validateInput: (value) => {
+            if (!value.trim()) {
+                return 'Branch name cannot be empty';
+            }
+            return null;
+        }
     });
 
-    if (!branch) { return undefined; }
+    if (branch === undefined) {
+        return undefined;
+    }
     state.branch = branch;
 
     // Step 3: Author name
@@ -60,10 +72,19 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
         title: 'Git Configuration (Step 3/5)',
         prompt: 'Enter your name (for commits)',
         placeHolder: 'John Doe',
-        value: existingConfig?.author?.name || ''
+        value: existingConfig?.author?.name || '',
+        ignoreFocusOut: true,
+        validateInput: (value) => {
+            if (!value.trim()) {
+                return 'Name cannot be empty';
+            }
+            return null;
+        }
     });
 
-    if (!authorName) { return undefined; }
+    if (authorName === undefined) {
+        return undefined;
+    }
     state.authorName = authorName;
 
     // Step 4: Author email
@@ -72,7 +93,11 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
         prompt: 'Enter your email (for commits)',
         placeHolder: 'john@example.com',
         value: existingConfig?.author?.email || '',
+        ignoreFocusOut: true,
         validateInput: (value) => {
+            if (!value.trim()) {
+                return 'Email cannot be empty';
+            }
             if (!value.includes('@')) {
                 return 'Please enter a valid email';
             }
@@ -80,7 +105,9 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
         }
     });
 
-    if (!authorEmail) { return undefined; }
+    if (authorEmail === undefined) {
+        return undefined;
+    }
     state.authorEmail = authorEmail;
 
     // Step 5: Authentication
@@ -91,11 +118,14 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
         ],
         {
             title: 'Git Configuration (Step 5/5)',
-            placeHolder: 'Select authentication method'
+            placeHolder: 'Select authentication method',
+            ignoreFocusOut: true
         }
     );
 
-    if (!authType) { return undefined; }
+    if (authType === undefined) {
+        return undefined;
+    }
 
     let credentials: { username: string; password: string };
 
@@ -105,6 +135,7 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
             prompt: 'Enter your Personal Access Token',
             placeHolder: 'ghp_xxxxxxxxxxxx (GitHub) or glpat-xxxxxxxxxxxx (GitLab)',
             password: true,
+            ignoreFocusOut: true,
             validateInput: (value) => {
                 if (!value.trim()) {
                     return 'Token cannot be empty';
@@ -113,7 +144,9 @@ async function collectGitConfiguration(existingConfig?: GitConfig): Promise<GitC
             }
         });
 
-        if (!token) { return undefined; }
+        if (token === undefined) {
+            return undefined;
+        }
 
         credentials = {
             username: 'oauth2',
@@ -170,9 +203,6 @@ export function registerGitCommands(
             }
 
             const notebook = item.notebook;
-
-            // Show output first
-            gitManager.showOutput();
 
             // Use multi-step input for better UX
             const result = await collectGitConfiguration(notebook.gitConfig);
