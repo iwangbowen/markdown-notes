@@ -44,7 +44,11 @@ export class NotebookManager {
     try {
       await vscode.workspace.fs.delete(notebookUri, { recursive: true });
     } catch (error) {
-      console.error('Failed to delete notebook directory:', error);
+      // Throw error for user notification, no console logging needed
+      if (error instanceof Error) {
+        throw new Error(`Failed to delete notebook directory: ${error.message}`);
+      }
+      throw error;
     }
 
     // 从配置中删除

@@ -9,7 +9,9 @@ import { GitConfig } from './types';
  * Extension activation function
  */
 export async function activate(context: vscode.ExtensionContext) {
-  console.log('Markdown Notes extension activated');
+  // Create output channel for extension logs
+  const outputChannel = vscode.window.createOutputChannel('Markdown Notes');
+  outputChannel.appendLine('Markdown Notes extension activated');
 
   // Initialize storage manager
   const storageManager = new StorageManager(context);
@@ -271,5 +273,5 @@ export async function activate(context: vscode.ExtensionContext) {
  * Extension deactivation function
  */
 export function deactivate() {
-  console.log('Markdown Notes extension deactivated');
+  // Extension deactivation (no logging needed as output channel is disposed)
 }
