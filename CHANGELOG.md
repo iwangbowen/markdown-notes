@@ -5,6 +5,42 @@ All notable changes to the "Markdown Notes Manager" extension will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-01-08
+
+### Added
+
+- **Rename Operations** - Support for renaming notebooks, folders, and notes
+  - **Rename Notebook** - Update notebook name in configuration (syncs across devices)
+    - Only modifies `globalState`, file system remains unchanged
+    - Right-click notebook → "Rename Notebook"
+  - **Rename Folder** - Physically rename folders in file system
+    - Uses `vscode.workspace.fs.rename()` API
+    - Git automatically tracks folder moves
+    - Validates folder name (disallows special characters: `/\<>:"|?*`)
+    - Right-click folder → "Rename Folder"
+  - **Rename Note** - Physically rename markdown files
+    - Uses `vscode.workspace.fs.rename()` API
+    - Git automatically tracks file renames
+    - Auto-adds `.md` extension if missing
+    - Automatically switches to new file if currently open
+    - Validates file name (disallows special characters)
+    - Right-click note → "Rename Note"
+
+- **Auto Refresh Git Status** - Periodic background Git status updates
+  - Configurable interval: `markdownNotes.git.autoRefreshInterval` (10-300 seconds, default 30)
+  - Set to 0 or negative to disable auto-refresh
+  - Runs silently in background without notifications
+  - Command: `markdownNotes.toggleAutoRefresh` to manually enable/disable
+  - Configuration changes take effect immediately
+
+### Fixed
+
+- **Git Status Accuracy** - Improved Git status detection and display
+  - Verify actual `.git` directory existence vs. config flag
+  - Show detailed missing configuration info in tooltips (credentials, local repo)
+  - Fixed unpushed commits counting logic (compare local vs remote branches)
+  - Support deleted files in Git commits (use `git.remove()` instead of `git.add()`)
+
 ## [0.2.2] - 2026-01-07
 
 ### Fixed
