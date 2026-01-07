@@ -7,6 +7,7 @@ import { NotebookManager } from './notebookManager';
 import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem, FolderTreeItem } from './noteTreeProvider';
 import { GitManager } from './gitManager';
 import { GitStatusRefresher } from './gitStatusRefresher';
+import { GitDecorationProvider } from './gitDecorationProvider';
 import { SearchEngine, SearchResult } from './searchEngine';
 import { TemplateManager } from './templateManager';
 import { generateFrontMatter } from './utils/yamlFrontMatter';
@@ -99,8 +100,36 @@ export async function activate(context: vscode.ExtensionContext) {
   const storageManager = new StorageManager(context);
   await storageManager.initializeStorage();
 
-  // Initialize notebook manager
+  // Initialize notebook manager (needed to get notebook list)
   const notebookManager = new NotebookManager(storageManager);
+
+  // Exclude notebook repositories from Source Control view
+  // This prevents notebook Git repos from appearing in the Source Control panel
+  const excludeNotebookRepos = async () => {
+    const notebooks = await notebookManager.getNotebooks();
+    const config = vscode.workspace.getConfiguration('git');
+    const currentIgnored = config.get<string[]>('ignoredRepositories', []);
+    const newPaths: string[] = [];
+
+    for (const notebook of notebooks) {
+      const notebookPath = vscode.Uri.joinPath(storageManager.getStorageUri(), 'notebooks', notebook.id).fsPath;
+      if (!currentIgnored.includes(notebookPath)) {
+        newPaths.push(notebookPath);
+      }
+    }
+
+    if (newPaths.length > 0) {
+      const updatedIgnored = [...currentIgnored, ...newPaths];
+      await config.update('ignoredRepositories', updatedIgnored, vscode.ConfigurationTarget.Global);
+      logger.info(`Added ${newPaths.length} notebook(s) to git.ignoredRepositories`, 'Core');
+    }
+  };
+
+  // Run on activation
+  await excludeNotebookRepos();
+
+  // Also run when new notebooks are created (listen to tree refresh)
+  // This will be handled by the create notebook command
 
   // Initialize git manager
   const gitManager = new GitManager(context, storageManager.getStorageUri());
@@ -122,6 +151,14 @@ export async function activate(context: vscode.ExtensionContext) {
   });
 
   context.subscriptions.push(treeView);
+
+  // Initialize Git decoration provider
+  // This provides custom Git file decorations (M/A/D badges) even when repos are hidden from Source Control
+  const gitDecorationProvider = new GitDecorationProvider(notebookManager, storageManager.getStorageUri());
+  context.subscriptions.push(
+    vscode.window.registerFileDecorationProvider(gitDecorationProvider)
+  );
+  logger.info('Git decoration provider registered', 'Core');
 
   // Watch for file system changes in notebooks directory
   const notebooksUri = vscode.Uri.joinPath(storageManager.getStorageUri(), 'notebooks');
