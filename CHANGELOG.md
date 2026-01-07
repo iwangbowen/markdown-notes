@@ -10,29 +10,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Note Templates** - Create notes from predefined templates
-  - **Built-in Templates** (stored as Markdown files in `templates/` directory):
-    - 📅 Daily Note - Daily notes with plan, summary, and notes sections
-    - ✈️ Travel Journal - Travel journal with itinerary, food, expenses, and photos
-    - 📋 Meeting Notes - Meeting notes with agenda, discussion points, and action items
-    - 📚 Reading Notes - Reading notes with book info, key points, quotes, and reflections
-    - 📊 Project Plan - Project plan with goals, milestones, tasks, and risk assessment
-    - 📄 Blank - Blank template for custom content
-    - **Note**: Built-in templates cannot be edited, only used for creating new notes
+  - **Built-in Templates** (6 professional English templates):
+    - 📄 **Blank** - Empty template for quick start (always shown first)
+    - 📅 **Daily Note** - Daily notes with plan, summary, and notes sections
+    - ✈️ **Travel Journal** - Travel journal with itinerary, food, expenses, and photos
+    - 📋 **Meeting Notes** - Meeting notes with agenda, discussion points, and action items
+    - 📚 **Reading Notes** - Reading notes with book info, key points, quotes, and reflections
+    - 📊 **Project Plan** - Project plan with goals, milestones, tasks, and risk assessment
+    - **Storage**: Templates stored as Markdown files in `templates/` directory (included in extension package)
+    - **Read-only**: Built-in templates cannot be edited or deleted
   - **Custom Templates**: Create and manage your own templates
-  - **Template Variables**: Support for dynamic content
+    - **Sync**: Custom templates stored in globalState, automatically sync across devices
+    - **Full Control**: Edit and delete custom templates
+  - **Template Variables**: Support for dynamic content replacement
     - `{{date}}` - Current date (YYYY-MM-DD)
     - `{{time}}` - Current time (HH:MM:SS)
     - `{{datetime}}` - Current date and time
     - `{{title}}` - Note title
-  - **Template Management**:
-    - **Command**: "Manage Templates" - View, edit, and delete templates
-    - **Command**: "Create Template" - Create new custom template
-    - **Command**: "Edit Template" - Edit template content
-    - **Command**: "Delete Template" - Delete custom template (built-in templates cannot be deleted)
-  - **Create Note with Template**: When creating a note, choose from available templates or create blank note (press ESC to skip template selection)
-  - **Cross-device Sync**: Templates stored in globalState, automatically sync across devices
-  - **Template Preview**: Preview template content before using
-  - **Template Files**: Built-in templates are loaded from Markdown files, making them easy to customize and extend
+  - **Template Management UI**:
+    - **Command**: "Manage Templates" (`Ctrl+Alt+T`) - Browse and preview all templates
+    - **Template Preview**: Read-only preview with Markdown syntax highlighting
+      - Virtual document system (no file saving)
+      - Clean tab names (no physical path exposure)
+      - Instant preview without creating files
+    - **Command**: "Create Template" - Create new custom template with interactive editor
+    - **Command**: "Edit Template" - Edit custom template content (blocks built-in templates)
+    - **Command**: "Delete Template" - Delete custom templates (blocks built-in templates)
+  - **Template Selection in Note Creation**:
+    - Integrated into "Create Note" workflow
+    - QuickPick shows all templates sorted (Blank first, then other built-in, then custom)
+    - Press ESC to skip template selection and create blank note
+  - **Smart Sorting**: Templates sorted with Blank first, followed by other built-in templates, then custom templates by creation time
+
+### Technical
+
+- Implemented `TemplateManager` for template CRUD operations
+- Implemented `TemplatePreviewProvider` using `TextDocumentContentProvider` for read-only previews
+- Virtual URI scheme `markdown-notes-template:` for template previews
+- Template files loaded from filesystem on first extension activation
+- Built-in template protection enforced at service layer
+
+### Notes
+
+- Built-in templates are read-only to ensure consistency across installations
+- Users can create custom templates based on built-in ones
+- Template files are included in extension package via `.vscodeignore` configuration
+- All templates use English language for international compatibility
 
 ## [0.2.6] - 2026-01-08
 
