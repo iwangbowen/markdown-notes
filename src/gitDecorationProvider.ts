@@ -25,11 +25,40 @@ export class GitDecorationProvider implements vscode.FileDecorationProvider {
 
     private readonly logger = Logger.getInstance();
     private readonly fileStatusCache = new Map<string, GitFileStatus>();
+    private refreshTimer?: NodeJS.Timeout;
+    private fileWatcher?: vscode.FileSystemWatcher;
 
     constructor(
         private readonly notebookManager: NotebookManager,
         private readonly storageUri: vscode.Uri
-    ) { }
+    ) {
+        // 监听文件变化
+        const notebooksPattern = vscode.Uri.joinPath(storageUri, 'notebooks').fsPath + '/**/*.md';
+        this.fileWatcher = vscode.workspace.createFileSystemWatcher(notebooksPattern);
+
+        this.fileWatcher.onDidCreate((uri) => {
+            this.logger.debug(`File created: ${uri.fsPath}`, 'GitDecoration');
+            this.fileStatusCache.delete(uri.fsPath);
+            this._onDidChangeFileDecorations.fire(uri);
+        });
+
+        this.fileWatcher.onDidChange((uri) => {
+            this.logger.debug(`File changed: ${uri.fsPath}`, 'GitDecoration');
+            this.fileStatusCache.delete(uri.fsPath);
+            this._onDidChangeFileDecorations.fire(uri);
+        });
+
+        this.fileWatcher.onDidDelete((uri) => {
+            this.logger.debug(`File deleted: ${uri.fsPath}`, 'GitDecoration');
+            this.fileStatusCache.delete(uri.fsPath);
+            this._onDidChangeFileDecorations.fire(uri);
+        });
+
+        // 定时刷新（每 5 秒）
+        this.refreshTimer = setInterval(() => {
+            this.refresh();
+        }, 5000);
+    }
 
     async provideFileDecoration(
         uri: vscode.Uri
@@ -141,6 +170,12 @@ export class GitDecorationProvider implements vscode.FileDecorationProvider {
     }
 
     dispose(): void {
+        if (this.refreshTimer) {
+            clearInterval(this.refreshTimer);
+        }
+        if (this.fileWatcher) {
+            this.fileWatcher.dispose();
+        }
         this._onDidChangeFileDecorations.dispose();
         this.fileStatusCache.clear();
     }
