@@ -531,4 +531,48 @@ export class GitManager {
             throw new Error(`Failed to read file at commit: ${error}`);
         }
     }
+
+    /**
+     * Reset a file to HEAD version (discard local changes)
+     */
+    async resetFileToHEAD(notebookId: string, filePath: string): Promise<void> {
+        const dir = this.getNotebookDir(notebookId);
+
+        try {
+            const relativePath = path.relative(dir, filePath).replaceAll('\\', '/');
+
+            this.logger.info(`Resetting file ${relativePath} to HEAD`, 'Git');
+
+            // Get HEAD commit
+            const headOid = await git.resolveRef({ fs, dir, ref: 'HEAD' });
+
+            // Read file content from HEAD
+            const result = await git.walk({
+                fs,
+                dir,
+                trees: [git.TREE({ ref: headOid })],
+                map: async (filepath, [entry]) => {
+                    if (filepath === relativePath && entry) {
+                        const oid = await entry.oid();
+                        const { blob } = await git.readBlob({ fs, dir, oid });
+                        return blob;
+                    }
+                    return undefined;
+                }
+            });
+
+            const blob = result.find(b => b !== undefined);
+            if (!blob) {
+                throw new Error('File not found in HEAD commit');
+            }
+
+            // Write the HEAD version back to disk
+            await fs.promises.writeFile(filePath, blob);
+
+            this.logger.info(`File ${relativePath} reset to HEAD successfully`, 'Git');
+        } catch (error) {
+            this.logger.error(`Failed to reset file: ${error}`, 'Git');
+            throw new Error(`Failed to reset file: ${error}`);
+        }
+    }
 }

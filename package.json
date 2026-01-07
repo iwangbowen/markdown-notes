@@ -223,6 +223,12 @@
         "icon": "$(git-compare)"
       },
       {
+        "command": "markdownNotes.resetToHEAD",
+        "title": "Reset to HEAD",
+        "category": "Markdown Notes",
+        "icon": "$(discard)"
+      },
+      {
         "command": "markdownNotes.toggleAutoRefresh",
         "title": "Toggle Git Auto Refresh",
         "category": "Markdown Notes",
@@ -349,6 +355,10 @@
         },
         {
           "command": "markdownNotes.compareWithHEAD",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.resetToHEAD",
           "when": "false"
         }
       ],
@@ -529,23 +539,15 @@
           "command": "markdownNotes.compareWithHEAD",
           "when": "view == markdownNotesView && viewItem == noteItem",
           "group": "2_git@2"
+        },
+        {
+          "command": "markdownNotes.resetToHEAD",
+          "when": "view == markdownNotesView && viewItem == noteItem",
+          "group": "2_git@3"
         }
       ]
     },
-    "keybindings": [
-      {
-        "command": "markdownNotes.searchNotes",
-        "key": "ctrl+shift+f",
-        "mac": "cmd+shift+f",
-        "when": "view == markdownNotesView"
-      },
-      {
-        "command": "markdownNotes.searchByTags",
-        "key": "ctrl+shift+t",
-        "mac": "cmd+shift+t",
-        "when": "view == markdownNotesView"
-      }
-    ],
+    "keybindings": [],
     "configuration": {
       "title": "Markdown Notes",
       "properties": {

@@ -1131,6 +1131,60 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Register command: reset note to HEAD (discard local changes)
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.resetToHEAD', async (item: NoteTreeItem) => {
+      if (!item || !item.noteUri) {
+        vscode.window.showWarningMessage('Please select a note');
+        return;
+      }
+
+      const notebookId = item.note.notebookId;
+      const notebook = (await notebookManager.getNotebooks()).find(n => n.id === notebookId);
+
+      if (!notebook || !notebook.gitConfig || !notebook.gitConfig.initialized) {
+        vscode.window.showWarningMessage('Git repository not initialized for this notebook');
+        return;
+      }
+
+      // Confirm action
+      const fileName = path.basename(item.noteUri.fsPath);
+      const confirm = await vscode.window.showWarningMessage(
+        `Are you sure you want to reset "${fileName}" to the last committed version? All local changes will be lost.`,
+        { modal: true },
+        'Reset',
+        'Cancel'
+      );
+
+      if (confirm !== 'Reset') {
+        return;
+      }
+
+      try {
+        await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: `Resetting ${fileName}...`,
+          cancellable: false
+        }, async () => {
+          await gitManager.resetFileToHEAD(notebookId, item.noteUri.fsPath);
+        });
+
+        // Refresh the currently open editor if this file is open
+        const activeEditor = vscode.window.activeTextEditor;
+        if (activeEditor && activeEditor.document.uri.toString() === item.noteUri.toString()) {
+          // Close and reopen to refresh content
+          await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+          await vscode.window.showTextDocument(item.noteUri);
+        }
+
+        vscode.window.showInformationMessage(`"${fileName}" has been reset to HEAD`);
+      } catch (error) {
+        logger.error(`Failed to reset file to HEAD: ${error}`, 'Git');
+        vscode.window.showErrorMessage(`Failed to reset file: ${error}`);
+      }
+    })
+  );
+
   // Register Git commands
   const { registerGitCommands } = await import('./gitCommands');
   registerGitCommands(context, gitManager, notebookManager, () => treeProvider.refresh());
