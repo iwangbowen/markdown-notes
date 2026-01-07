@@ -77,6 +77,21 @@ export class NotebookManager {
   }
 
   /**
+   * Rename notebook (只修改 globalState 配置,不影响文件系统)
+   */
+  async renameNotebook(notebookId: string, newName: string): Promise<void> {
+    const config = await this.storageManager.getConfig();
+    const notebook = config.notebooks.find(n => n.id === notebookId);
+
+    if (!notebook) {
+      throw new Error(`Notebook ${notebookId} not found`);
+    }
+
+    notebook.name = newName;
+    await this.storageManager.saveConfig(config);
+  }
+
+  /**
    * Create note
    */
   async createNote(notebookId: string, name: string, folderPath: string = ''): Promise<Note> {
@@ -265,5 +280,43 @@ export class NotebookManager {
     }
 
     return null;
+  }
+
+  /**
+   * Rename folder (实际移动文件系统中的文件夹,Git 自动跟踪)
+   */
+  async renameFolder(notebookId: string, folderPath: string, newName: string): Promise<void> {
+    const notebookUri = this.storageManager.getNotebookUri(notebookId);
+    const oldFolderUri = vscode.Uri.joinPath(notebookUri, folderPath);
+
+    // Build new path: replace last component with newName
+    const pathParts = folderPath.split(path.posix.sep).filter(Boolean);
+    pathParts[pathParts.length - 1] = newName;
+    const newFolderPath = pathParts.join(path.posix.sep);
+    const newFolderUri = vscode.Uri.joinPath(notebookUri, newFolderPath);
+
+    // Rename (move) folder
+    await vscode.workspace.fs.rename(oldFolderUri, newFolderUri, { overwrite: false });
+  }
+
+  /**
+   * Rename note (实际重命名文件系统中的文件,Git 自动跟踪)
+   */
+  async renameNote(noteUri: vscode.Uri, newName: string): Promise<vscode.Uri> {
+    // Ensure .md extension
+    if (!newName.endsWith('.md')) {
+      newName += '.md';
+    }
+
+    // Build new URI in same directory
+    const oldPath = noteUri.fsPath;
+    const dirPath = path.dirname(oldPath);
+    const newPath = path.join(dirPath, newName);
+    const newUri = vscode.Uri.file(newPath);
+
+    // Rename file
+    await vscode.workspace.fs.rename(noteUri, newUri, { overwrite: false });
+
+    return newUri;
   }
 }

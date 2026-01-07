@@ -292,6 +292,47 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Register command: rename note
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.renameNote', async (item: NoteTreeItem) => {
+      const currentName = item.note.name;
+      const newName = await vscode.window.showInputBox({
+        prompt: 'Enter new note name (without .md extension)',
+        value: currentName,
+        validateInput: (value) => {
+          if (!value.trim()) {
+            return 'Note name cannot be empty';
+          }
+          // Check for invalid characters
+          if (/[/\\<>:"|?*]/.test(value)) {
+            return 'Note name contains invalid characters';
+          }
+          return null;
+        }
+      });
+
+      if (newName && newName !== currentName) {
+        try {
+          const newUri = await notebookManager.renameNote(item.noteUri, newName.trim());
+
+          // Refresh tree to show new name
+          treeProvider.refresh();
+
+          // If the file is open, close old and open new
+          const openDoc = vscode.workspace.textDocuments.find(doc => doc.uri.toString() === item.noteUri.toString());
+          if (openDoc) {
+            await vscode.window.showTextDocument(newUri);
+            await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+          }
+
+          vscode.window.showInformationMessage(`Note renamed to "${newName}"`);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to rename note: ${error}`);
+        }
+      }
+    })
+  );
+
   // Register command: delete note
   context.subscriptions.push(
     vscode.commands.registerCommand('markdownNotes.deleteNote', async (item: NoteTreeItem) => {
@@ -313,6 +354,36 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Register command: rename folder
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.renameFolder', async (item: FolderTreeItem) => {
+      const newName = await vscode.window.showInputBox({
+        prompt: 'Enter new folder name',
+        value: item.folder.name,
+        validateInput: (value) => {
+          if (!value.trim()) {
+            return 'Folder name cannot be empty';
+          }
+          // Check for invalid characters
+          if (/[/\\<>:"|?*]/.test(value)) {
+            return 'Folder name contains invalid characters';
+          }
+          return null;
+        }
+      });
+
+      if (newName && newName !== item.folder.name) {
+        try {
+          await notebookManager.renameFolder(item.folder.notebookId, item.folder.path, newName.trim());
+          treeProvider.refresh();
+          vscode.window.showInformationMessage(`Folder renamed to "${newName}"`);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to rename folder: ${error}`);
+        }
+      }
+    })
+  );
+
   // Register command: delete folder
   context.subscriptions.push(
     vscode.commands.registerCommand('markdownNotes.deleteFolder', async (item: FolderTreeItem) => {
@@ -329,6 +400,32 @@ export async function activate(context: vscode.ExtensionContext) {
           vscode.window.showInformationMessage(`Folder "${item.folder.name}" deleted`);
         } catch (error) {
           vscode.window.showErrorMessage(`Failed to delete folder: ${error}`);
+        }
+      }
+    })
+  );
+
+  // Register command: rename notebook
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.renameNotebook', async (item: NotebookTreeItem) => {
+      const newName = await vscode.window.showInputBox({
+        prompt: 'Enter new notebook name',
+        value: item.notebook.name,
+        validateInput: (value) => {
+          if (!value.trim()) {
+            return 'Notebook name cannot be empty';
+          }
+          return null;
+        }
+      });
+
+      if (newName && newName !== item.notebook.name) {
+        try {
+          await notebookManager.renameNotebook(item.notebook.id, newName.trim());
+          treeProvider.refresh();
+          vscode.window.showInformationMessage(`Notebook renamed to "${newName}"`);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to rename notebook: ${error}`);
         }
       }
     })

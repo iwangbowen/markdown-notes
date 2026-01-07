@@ -85,6 +85,24 @@
         "icon": "$(trash)"
       },
       {
+        "command": "markdownNotes.renameNotebook",
+        "title": "Rename Notebook",
+        "category": "Markdown Notes",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "markdownNotes.renameFolder",
+        "title": "Rename Folder",
+        "category": "Markdown Notes",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "markdownNotes.renameNote",
+        "title": "Rename Note",
+        "category": "Markdown Notes",
+        "icon": "$(edit)"
+      },
+      {
         "command": "markdownNotes.refreshTree",
         "title": "Refresh",
         "category": "Markdown Notes",
@@ -265,6 +283,11 @@
           "group": "9_utilities"
         },
         {
+          "command": "markdownNotes.renameNotebook",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "7_edit@1"
+        },
+        {
           "command": "markdownNotes.deleteNotebook",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "9_delete@1"
@@ -290,14 +313,24 @@
           "group": "1_actions@2"
         },
         {
+          "command": "markdownNotes.renameFolder",
+          "when": "view == markdownNotesView && viewItem == folderItem",
+          "group": "7_edit@1"
+        },
+        {
           "command": "markdownNotes.deleteFolder",
           "when": "view == markdownNotesView && viewItem == folderItem",
           "group": "2_delete@1"
         },
         {
+          "command": "markdownNotes.renameNote",
+          "when": "view == markdownNotesView && viewItem == noteItem",
+          "group": "1_edit@1"
+        },
+        {
           "command": "markdownNotes.deleteNote",
           "when": "view == markdownNotesView && viewItem == noteItem",
-          "group": "1_actions@1"
+          "group": "9_delete@1"
         },
         {
           "command": "markdownNotes.viewFileHistory",
