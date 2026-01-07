@@ -310,26 +310,44 @@ export class GitManager {
                 branch = await git.currentBranch({ fs, dir, fullname: false }) || 'main';
             } catch (error) {
                 // Branch doesn't exist yet (empty repo)
-                this.logger.warn('No branch found, using default: main', 'Git');
+                console.error('No branch found, using default: main', error);
                 branch = 'main';
             }
 
-            // Get log to check unpushed commits
-            let commits: any[] = [];
+            // Calculate unpushed commits by comparing with remote
+            let unpushedCommits = 0;
             try {
-                commits = await git.log({ fs, dir, depth: 10 });
+                // Get local commits
+                const localCommits = await git.log({ fs, dir, ref: branch });
+
+                // Try to get remote commits
+                try {
+                    const remoteCommits = await git.log({ fs, dir, ref: `origin/${branch}` });
+                    const remoteHead = remoteCommits[0]?.oid;
+
+                    // Count commits in local but not in remote
+                    for (const commit of localCommits) {
+                        if (commit.oid === remoteHead) {
+                            break; // Found common ancestor
+                        }
+                        unpushedCommits++;
+                    }
+                } catch {
+                    // No remote branch yet (fresh clone or new branch)
+                    // All local commits are unpushed
+                    unpushedCommits = localCommits.length;
+                }
             } catch (error) {
                 // No commits yet (empty repo)
-                this.logger.debug('No commits found (empty repository)', 'Git');
-                commits = [];
+                console.debug('No commits found (empty repository)', error);
+                unpushedCommits = 0;
             }
 
-            this.logger.info(`Status: ${uncommittedChanges} uncommitted changes, branch: ${branch}`, 'Git');
-            this.logger.debug(`Recent commits: ${commits.length}`, 'Git');
+            this.logger.info(`Status: ${uncommittedChanges} uncommitted, ${unpushedCommits} unpushed, branch: ${branch}`, 'Git');
 
             return {
                 uncommittedChanges,
-                unpushedCommits: commits.length, // Simplified - should compare with remote
+                unpushedCommits,
                 hasConflicts: false,
                 branch
             };
