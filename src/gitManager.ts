@@ -185,13 +185,26 @@ export class GitManager {
         this.logger.debug(`Commit message: "${message}"`, 'Git');
 
         try {
-            // Add all changes
-            const files = await this.getChangedFiles(notebookId);
-            this.logger.debug(`Found ${files.length} changed files`, 'Git');
+            // Get status matrix to differentiate between added/modified/deleted files
+            const statusMatrix = await git.statusMatrix({ fs, dir });
 
-            for (const file of files) {
-                this.logger.debug(`Adding file: ${file}`, 'Git');
-                await git.add({ fs, dir, filepath: file });
+            // Filter files that have changes
+            const changedFiles = statusMatrix.filter(
+                ([_, head, workdir, stage]) => head !== workdir || head !== stage
+            );
+
+            this.logger.debug(`Found ${changedFiles.length} changed files`, 'Git');
+
+            for (const [filepath, , workdir] of changedFiles) {
+                if (workdir === 0) {
+                    // File deleted (workdir=0 means absent in working directory)
+                    this.logger.debug(`Removing file: ${filepath}`, 'Git');
+                    await git.remove({ fs, dir, filepath });
+                } else {
+                    // File added or modified (workdir=1 or 2)
+                    this.logger.debug(`Adding file: ${filepath}`, 'Git');
+                    await git.add({ fs, dir, filepath });
+                }
             }
 
             // Commit
