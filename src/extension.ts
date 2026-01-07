@@ -7,6 +7,7 @@ import { NotebookManager } from './notebookManager';
 import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem, FolderTreeItem } from './noteTreeProvider';
 import { GitManager } from './gitManager';
 import { GitStatusRefresher } from './gitStatusRefresher';
+import { SearchEngine, SearchResult } from './searchEngine';
 import { GitConfig } from './types';
 
 /**
@@ -141,12 +142,97 @@ export async function activate(context: vscode.ExtensionContext) {
   const gitRefresher = new GitStatusRefresher(context, treeProvider);
   gitRefresher.start();
 
+  // Initialize search engine
+  const searchEngine = new SearchEngine(notebookManager);
+
   // Listen for configuration changes
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('markdownNotes.git')) {
         logger.info('Git configuration changed, restarting auto refresh', 'Core');
         gitRefresher.restart();
+      }
+    })
+  );
+
+  // Register command: search notes
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.searchNotes', async (item?: NotebookTreeItem | FolderTreeItem) => {
+      const searchQuery = await vscode.window.showInputBox({
+        prompt: 'Search in notes',
+        placeHolder: 'Enter search keyword',
+      });
+
+      if (!searchQuery) {
+        return;
+      }
+
+      // Determine search scope
+      let notebookId: string | undefined;
+      let folderPath: string | undefined;
+
+      if (item instanceof NotebookTreeItem) {
+        notebookId = item.notebook.id;
+      } else if (item instanceof FolderTreeItem) {
+        notebookId = item.folder.notebookId;
+        folderPath = item.folder.path;
+      }
+
+      // Perform search
+      try {
+        const results = await searchEngine.search({
+          query: searchQuery,
+          caseSensitive: false,
+          useRegex: false,
+          scope: notebookId ? { notebookId, folderPath } : undefined,
+        });
+
+        if (results.length === 0) {
+          vscode.window.showInformationMessage(`No results found for "${searchQuery}"`);
+          return;
+        }
+
+        // Flatten matches for QuickPick display
+        interface QuickPickItem extends vscode.QuickPickItem {
+          noteUri: vscode.Uri;
+          lineNumber: number;
+          matchStart: number;
+        }
+
+        const items: QuickPickItem[] = [];
+        for (const result of results) {
+          for (const match of result.matches) {
+            items.push({
+              label: `$(file-text) ${result.noteName}`,
+              description: `Line ${match.lineNumber} · ${result.notebookName}`,
+              detail: match.lineText.trim(),
+              noteUri: result.noteUri,
+              lineNumber: match.lineNumber,
+              matchStart: match.matchStart,
+            });
+          }
+        }
+
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: `Found ${items.length} match(es) in ${results.length} note(s) for "${searchQuery}"`,
+          matchOnDescription: true,
+          matchOnDetail: true,
+        });
+
+        if (selected) {
+          // Open note and navigate to match
+          const document = await vscode.workspace.openTextDocument(selected.noteUri);
+          const editor = await vscode.window.showTextDocument(document);
+
+          // Navigate to line and reveal
+          const line = selected.lineNumber - 1; // Convert to 0-based
+          const position = new vscode.Position(line, selected.matchStart);
+          editor.selection = new vscode.Selection(position, position);
+          editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+        }
+      } catch (error) {
+        logger.error(`Search failed: ${error}`, 'Search');
+        vscode.window.showErrorMessage(`Search failed: ${error}`);
       }
     })
   );

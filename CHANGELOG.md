@@ -5,6 +5,39 @@ All notable changes to the "Markdown Notes Manager" extension will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-01-08
+
+### Added
+
+- **Search Functionality** - Search across all notes with flexible options
+  - **Global Search** - Search all notes across all notebooks
+  - **Scoped Search** - Limit search to specific notebook or folder (right-click context menu)
+  - **Content Matching** - Find notes containing search keywords
+  - **Case-Insensitive** - Default case-insensitive search for better results
+  - **QuickPick Results** - Interactive results display with:
+    - Note name and notebook location
+    - Line number where match was found
+    - Context preview (matched line text)
+    - Click to open note and jump to match location
+  - **Keyboard Shortcut** - Press `Ctrl+Shift+F` (Windows/Linux) or `Cmd+Shift+F` (Mac) in TreeView
+  - **Multiple Access Points**:
+    - TreeView title bar search icon
+    - Right-click notebook → "Search Notes" (search entire notebook)
+    - Right-click folder → "Search Notes" (search within folder only)
+    - Command Palette → "Markdown Notes: Search Notes"
+
+### Changed
+
+- **Time Display Format** - All timestamps now show in local timezone with ISO-like format
+  - Format: `YYYY-MM-DD HH:MM:SS` (e.g., "2026-01-08 15:30:45")
+  - Previously showed UTC time which was confusing for users
+  - Centralized time formatting utility in `src/utils/dateFormatter.ts`
+
+- **Enhanced Tooltips** - Folder and note tooltips now show more useful information
+  - **Folder tooltips**: Path and creation time
+  - **Note tooltips**: Full path, creation time, and last modification time
+  - All times displayed in local timezone
+
 ## [0.2.5] - 2026-01-08
 
 ### Added

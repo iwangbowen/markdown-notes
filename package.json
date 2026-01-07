@@ -2,7 +2,7 @@
   "name": "markdown-notes",
   "displayName": "Markdown Notes Manager",
   "description": "Multi-notebook Markdown notes manager with tree view and native editor",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "publisher": "WangBowen",
   "icon": "resources/icon.png",
   "repository": {
@@ -48,6 +48,12 @@
       ]
     },
     "commands": [
+      {
+        "command": "markdownNotes.searchNotes",
+        "title": "Search Notes",
+        "category": "Markdown Notes",
+        "icon": "$(search)"
+      },
       {
         "command": "markdownNotes.createNotebook",
         "title": "Create Notebook",
@@ -196,6 +202,11 @@
     "menus": {
       "view/title": [
         {
+          "command": "markdownNotes.searchNotes",
+          "when": "view == markdownNotesView",
+          "group": "navigation@0"
+        },
+        {
           "command": "markdownNotes.createNotebook",
           "when": "view == markdownNotesView",
           "group": "navigation@1"
@@ -212,6 +223,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "markdownNotes.searchNotes",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "0_search@1"
+        },
         {
           "command": "markdownNotes.createNote",
           "when": "view == markdownNotesView && viewItem == notebookItem",
@@ -293,6 +309,11 @@
           "group": "9_delete@1"
         },
         {
+          "command": "markdownNotes.searchNotes",
+          "when": "view == markdownNotesView && viewItem == folderItem",
+          "group": "0_search@1"
+        },
+        {
           "command": "markdownNotes.createNote",
           "when": "view == markdownNotesView && viewItem == folderItem",
           "group": "inline@1"
@@ -344,6 +365,14 @@
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "markdownNotes.searchNotes",
+        "key": "ctrl+shift+f",
+        "mac": "cmd+shift+f",
+        "when": "view == markdownNotesView"
+      }
+    ],
     "configuration": {
       "title": "Markdown Notes",
       "properties": {
