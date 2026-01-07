@@ -49,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Virtual URI scheme `markdown-notes-template:` for template previews
 - Template files loaded from filesystem on first extension activation
 - Built-in template protection enforced at service layer
+- **Command Palette Cleanup**: Hidden context-specific commands (rename, delete, Git operations, etc.) from Command Palette
+  - Only 5 commands visible: Search Notes, Create Notebook, Manage Templates, Show Output Logs, Toggle Git Auto Refresh
+  - 23 commands hidden (accessible via TreeView context menus and buttons)
 
 ### Notes
 

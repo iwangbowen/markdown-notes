@@ -224,6 +224,124 @@
       }
     ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "markdownNotes.searchNotes",
+          "when": "true"
+        },
+        {
+          "command": "markdownNotes.createNotebook",
+          "when": "true"
+        },
+        {
+          "command": "markdownNotes.manageTemplates",
+          "when": "true"
+        },
+        {
+          "command": "markdownNotes.showOutput",
+          "when": "true"
+        },
+        {
+          "command": "markdownNotes.toggleAutoRefresh",
+          "when": "true"
+        },
+        {
+          "command": "markdownNotes.createNote",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.createFolder",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.createTemplate",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.editTemplate",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.deleteTemplate",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.deleteNote",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.deleteFolder",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.deleteNotebook",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.renameNotebook",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.renameFolder",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.renameNote",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.refreshTree",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.expandAll",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.configureGit",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.gitInit",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.gitClone",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.gitCommit",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.gitPull",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.gitPush",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.gitSync",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.gitStatus",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.revealInExplorer",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.viewFileHistory",
+          "when": "false"
+        },
+        {
+          "command": "markdownNotes.compareWithHEAD",
+          "when": "false"
+        }
+      ],
       "view/title": [
         {
           "command": "markdownNotes.searchNotes",
