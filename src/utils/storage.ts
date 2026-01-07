@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { GlobalConfig, Notebook } from '../types';
+import { GlobalConfig, Notebook, Template } from '../types';
 
 /**
  * Storage Manager
@@ -103,6 +103,52 @@ export class StorageManager {
     } catch {
       // 目录不存在，创建它
       await vscode.workspace.fs.createDirectory(notebooksUri);
+    }
+  }
+
+  /**
+   * Get all templates
+   */
+  async getTemplates(): Promise<Template[]> {
+    const config = await this.getConfig();
+    return config.templates || [];
+  }
+
+  /**
+   * Add template to configuration
+   */
+  async addTemplate(template: Template): Promise<void> {
+    const config = await this.getConfig();
+    if (!config.templates) {
+      config.templates = [];
+    }
+    config.templates.push(template);
+    await this.saveConfig(config);
+  }
+
+  /**
+   * Update template in configuration
+   */
+  async updateTemplate(template: Template): Promise<void> {
+    const config = await this.getConfig();
+    if (!config.templates) {
+      config.templates = [];
+    }
+    const index = config.templates.findIndex(t => t.id === template.id);
+    if (index !== -1) {
+      config.templates[index] = template;
+      await this.saveConfig(config);
+    }
+  }
+
+  /**
+   * Delete template from configuration
+   */
+  async deleteTemplate(id: string): Promise<void> {
+    const config = await this.getConfig();
+    if (config.templates) {
+      config.templates = config.templates.filter(t => t.id !== id);
+      await this.saveConfig(config);
     }
   }
 }

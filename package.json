@@ -2,7 +2,7 @@
   "name": "markdown-notes",
   "displayName": "Markdown Notes Manager",
   "description": "Multi-notebook Markdown notes manager with tree view and native editor",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "publisher": "WangBowen",
   "icon": "resources/icon.png",
   "repository": {
@@ -87,6 +87,30 @@
       {
         "command": "markdownNotes.deleteNotebook",
         "title": "Delete Notebook",
+        "category": "Markdown Notes",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "markdownNotes.manageTemplates",
+        "title": "Manage Templates",
+        "category": "Markdown Notes",
+        "icon": "$(book)"
+      },
+      {
+        "command": "markdownNotes.createTemplate",
+        "title": "Create Template",
+        "category": "Markdown Notes",
+        "icon": "$(add)"
+      },
+      {
+        "command": "markdownNotes.editTemplate",
+        "title": "Edit Template",
+        "category": "Markdown Notes",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "markdownNotes.deleteTemplate",
+        "title": "Delete Template",
         "category": "Markdown Notes",
         "icon": "$(trash)"
       },

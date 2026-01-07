@@ -8,6 +8,8 @@ import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem, FolderTreeItem } from
 import { GitManager } from './gitManager';
 import { GitStatusRefresher } from './gitStatusRefresher';
 import { SearchEngine, SearchResult } from './searchEngine';
+import { TemplateManager } from './templateManager';
+import { TemplatePreviewProvider } from './templatePreviewProvider';
 import { GitConfig } from './types';
 
 /**
@@ -101,6 +103,15 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Initialize git manager
   const gitManager = new GitManager(context, storageManager.getStorageUri());
+
+  // Initialize template manager
+  const templateManager = new TemplateManager(storageManager, context.extensionPath);
+
+  // Register template preview provider
+  const templatePreviewProvider = new TemplatePreviewProvider(templateManager);
+  context.subscriptions.push(
+    vscode.workspace.registerTextDocumentContentProvider('markdown-notes-template', templatePreviewProvider)
+  );
 
   // Initialize TreeView
   const treeProvider = new NoteTreeProvider(context, notebookManager, gitManager);
@@ -305,19 +316,49 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       });
 
-      if (name && notebookId) {
-        try {
-          const note = await notebookManager.createNote(notebookId, name.trim(), folderPath);
-          treeProvider.refresh();
+      if (!name || !notebookId) {
+        return;
+      }
 
-          // Auto open the newly created note
+      // Let user choose template
+      const templates = await templateManager.getAllTemplates();
+      const templateItems = templates.map(t => ({
+        label: t.name,
+        description: t.isBuiltIn ? '(Built-in)' : '(Custom)',
+        detail: t.content.substring(0, 100) + (t.content.length > 100 ? '...' : ''),
+        template: t
+      }));
+
+      const selectedTemplate = await vscode.window.showQuickPick(templateItems, {
+        placeHolder: 'Select a template (press ESC to create blank note)',
+        title: `Create note: ${name.trim()}`,
+      });
+
+      try {
+        // Create note file first
+        const note = await notebookManager.createNote(notebookId, name.trim(), folderPath);
+
+        // Apply template if selected
+        if (selectedTemplate) {
+          const content = await templateManager.applyTemplate(
+            selectedTemplate.template.id,
+            { title: name.trim() }
+          );
+
+          // Write template content to note
           const uri = vscode.Uri.parse(note.uri);
-          await notebookManager.openNote(uri);
-
-          vscode.window.showInformationMessage(`Note "${name}" created successfully`);
-        } catch (error) {
-          vscode.window.showErrorMessage(`Failed to create note: ${error}`);
+          await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
         }
+
+        treeProvider.refresh();
+
+        // Auto open the newly created note
+        const uri = vscode.Uri.parse(note.uri);
+        await notebookManager.openNote(uri);
+
+        vscode.window.showInformationMessage(`Note "${name}" created successfully`);
+      } catch (error) {
+        vscode.window.showErrorMessage(`Failed to create note: ${error}`);
       }
     })
   );
@@ -541,6 +582,237 @@ export async function activate(context: vscode.ExtensionContext) {
           vscode.window.showInformationMessage(`Notebook "${item.notebook.name}" deleted`);
         } catch (error) {
           vscode.window.showErrorMessage(`Failed to delete notebook: ${error}`);
+        }
+      }
+    })
+  );
+
+  // Register command: manage templates
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.manageTemplates', async () => {
+      const templates = await templateManager.getAllTemplates();
+
+      const items = templates.map(t => ({
+        label: t.name,
+        description: t.isBuiltIn ? '(Built-in)' : '(Custom)',
+        detail: `Created: ${new Date(t.createdAt).toLocaleDateString()}`,
+        template: t,
+        buttons: t.isBuiltIn
+          ? [] // Built-in templates have no action buttons
+          : [
+            { iconPath: new vscode.ThemeIcon('edit'), tooltip: 'Edit' },
+            { iconPath: new vscode.ThemeIcon('trash'), tooltip: 'Delete' }
+          ]
+      }));
+
+      const quickPick = vscode.window.createQuickPick();
+      quickPick.items = items;
+      quickPick.placeholder = 'Select a template to manage';
+      quickPick.title = 'Template Manager';
+      quickPick.buttons = [{ iconPath: new vscode.ThemeIcon('add'), tooltip: 'Create New Template' }];
+
+      quickPick.onDidTriggerButton(async (button) => {
+        if (button.tooltip === 'Create New Template') {
+          quickPick.hide();
+          await vscode.commands.executeCommand('markdownNotes.createTemplate');
+        }
+      });
+
+      quickPick.onDidTriggerItemButton(async (e) => {
+        const item = e.item as typeof items[0];
+        if (e.button.tooltip === 'Edit') {
+          quickPick.hide();
+          await vscode.commands.executeCommand('markdownNotes.editTemplate', item.template.id);
+        } else if (e.button.tooltip === 'Delete') {
+          quickPick.hide();
+          await vscode.commands.executeCommand('markdownNotes.deleteTemplate', item.template.id);
+        }
+      });
+
+      quickPick.onDidAccept(async () => {
+        const selected = quickPick.selectedItems[0] as typeof items[0];
+        if (selected) {
+          quickPick.hide();
+          // Show template preview using read-only provider
+          await templatePreviewProvider.openPreview(selected.template.id, selected.template.name);
+        }
+      });
+
+      quickPick.show();
+    })
+  );
+
+  // Register command: create template
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.createTemplate', async () => {
+      const name = await vscode.window.showInputBox({
+        prompt: 'Enter template name',
+        placeHolder: 'e.g., Weekly Report',
+        validateInput: (value) => {
+          if (!value.trim()) {
+            return 'Template name cannot be empty';
+          }
+          return null;
+        }
+      });
+
+      if (!name) {
+        return;
+      }
+
+      // Open a new document for template content
+      const doc = await vscode.workspace.openTextDocument({
+        content: `# ${name.trim()}\n\nEnter your template content here...\n\nSupported variables:\n- {{date}} - Current date\n- {{time}} - Current time\n- {{datetime}} - Current date and time\n- {{title}} - Note title\n`,
+        language: 'markdown',
+      });
+
+      const editor = await vscode.window.showTextDocument(doc);
+
+      // Wait for user to finish editing
+      const answer = await vscode.window.showInformationMessage(
+        'Edit the template content, then click "Save Template"',
+        'Save Template',
+        'Cancel'
+      );
+
+      if (answer === 'Save Template') {
+        const content = editor.document.getText();
+        try {
+          await templateManager.createTemplate({
+            name: name.trim(),
+            content,
+            isBuiltIn: false,
+          });
+          vscode.window.showInformationMessage(`Template "${name}" created successfully`);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to create template: ${error}`);
+        }
+      }
+    })
+  );
+
+  // Register command: edit template
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.editTemplate', async (templateId?: string) => {
+      let id = templateId;
+
+      if (!id) {
+        const templates = await templateManager.getAllTemplates();
+        const customTemplates = templates.filter(t => !t.isBuiltIn);
+
+        if (customTemplates.length === 0) {
+          vscode.window.showInformationMessage('No custom templates to edit. Built-in templates cannot be edited.');
+          return;
+        }
+
+        const items = customTemplates.map(t => ({
+          label: t.name,
+          description: '(Custom)',
+          id: t.id,
+        }));
+
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: 'Select a custom template to edit',
+        });
+
+        if (!selected) {
+          return;
+        }
+
+        id = selected.id;
+      }
+
+      const template = await templateManager.getTemplate(id);
+      if (!template) {
+        vscode.window.showErrorMessage('Template not found');
+        return;
+      }
+
+      if (template.isBuiltIn) {
+        vscode.window.showErrorMessage('Cannot edit built-in template. Create a custom template instead.');
+        return;
+      }
+
+      // Open template content for editing
+      const doc = await vscode.workspace.openTextDocument({
+        content: template.content,
+        language: 'markdown',
+      });
+
+      const editor = await vscode.window.showTextDocument(doc);
+
+      // Wait for user to finish editing
+      const answer = await vscode.window.showInformationMessage(
+        `Edit template "${template.name}", then click "Save Changes"`,
+        'Save Changes',
+        'Cancel'
+      );
+
+      if (answer === 'Save Changes') {
+        const newContent = editor.document.getText();
+        try {
+          await templateManager.updateTemplate(id, { content: newContent });
+          vscode.window.showInformationMessage(`Template "${template.name}" updated successfully`);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to update template: ${error}`);
+        }
+      }
+    })
+  );
+
+  // Register command: delete template
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.deleteTemplate', async (templateId?: string) => {
+      let id = templateId;
+
+      if (!id) {
+        const templates = await templateManager.getAllTemplates();
+        const customTemplates = templates.filter(t => !t.isBuiltIn);
+
+        if (customTemplates.length === 0) {
+          vscode.window.showInformationMessage('No custom templates to delete');
+          return;
+        }
+
+        const items = customTemplates.map(t => ({
+          label: t.name,
+          id: t.id,
+        }));
+
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: 'Select a template to delete',
+        });
+
+        if (!selected) {
+          return;
+        }
+
+        id = selected.id;
+      }
+
+      const template = await templateManager.getTemplate(id);
+      if (!template) {
+        vscode.window.showErrorMessage('Template not found');
+        return;
+      }
+
+      if (template.isBuiltIn) {
+        vscode.window.showErrorMessage('Cannot delete built-in template');
+        return;
+      }
+
+      const answer = await vscode.window.showWarningMessage(
+        `Are you sure you want to delete template "${template.name}"?`,
+        { modal: true },
+        'Delete'
+      );
+
+      if (answer === 'Delete') {
+        try {
+          await templateManager.deleteTemplate(id);
+          vscode.window.showInformationMessage(`Template "${template.name}" deleted successfully`);
+        } catch (error) {
+          vscode.window.showErrorMessage(`Failed to delete template: ${error}`);
         }
       }
     })

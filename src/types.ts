@@ -91,4 +91,24 @@ export interface GlobalConfig {
   activeNotebook?: string;
   /** Configuration version (for future migration) */
   version?: string;
+  /** Note templates */
+  templates?: Template[];
+}
+
+/**
+ * Note template interface
+ */
+export interface Template {
+  /** Unique identifier */
+  id: string;
+  /** Template name */
+  name: string;
+  /** Template content (supports variables like {{date}}, {{time}}, etc.) */
+  content: string;
+  /** Whether this is a built-in template (cannot be deleted) */
+  isBuiltIn: boolean;
+  /** Creation timestamp */
+  createdAt: number;
+  /** Last modified timestamp */
+  updatedAt?: number;
 }

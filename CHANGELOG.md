@@ -5,6 +5,35 @@ All notable changes to the "Markdown Notes Manager" extension will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7] - 2026-01-08
+
+### Added
+
+- **Note Templates** - Create notes from predefined templates
+  - **Built-in Templates** (stored as Markdown files in `templates/` directory):
+    - 📅 Daily Note - Daily notes with plan, summary, and notes sections
+    - ✈️ Travel Journal - Travel journal with itinerary, food, expenses, and photos
+    - 📋 Meeting Notes - Meeting notes with agenda, discussion points, and action items
+    - 📚 Reading Notes - Reading notes with book info, key points, quotes, and reflections
+    - 📊 Project Plan - Project plan with goals, milestones, tasks, and risk assessment
+    - 📄 Blank - Blank template for custom content
+    - **Note**: Built-in templates cannot be edited, only used for creating new notes
+  - **Custom Templates**: Create and manage your own templates
+  - **Template Variables**: Support for dynamic content
+    - `{{date}}` - Current date (YYYY-MM-DD)
+    - `{{time}}` - Current time (HH:MM:SS)
+    - `{{datetime}}` - Current date and time
+    - `{{title}}` - Note title
+  - **Template Management**:
+    - **Command**: "Manage Templates" - View, edit, and delete templates
+    - **Command**: "Create Template" - Create new custom template
+    - **Command**: "Edit Template" - Edit template content
+    - **Command**: "Delete Template" - Delete custom template (built-in templates cannot be deleted)
+  - **Create Note with Template**: When creating a note, choose from available templates or create blank note (press ESC to skip template selection)
+  - **Cross-device Sync**: Templates stored in globalState, automatically sync across devices
+  - **Template Preview**: Preview template content before using
+  - **Template Files**: Built-in templates are loaded from Markdown files, making them easy to customize and extend
+
 ## [0.2.6] - 2026-01-08
 
 ### Added
