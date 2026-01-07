@@ -190,7 +190,18 @@ export class FolderTreeItem extends TreeItem {
     this.contextValue = 'folderItem';
     // Use custom icon if provided, otherwise use default ThemeIcon
     this.iconPath = folderIconPath || new vscode.ThemeIcon('folder');
-    this.tooltip = folder.path;
+
+    // Build detailed tooltip
+    const tooltipLines = [
+      `📁 ${folder.name}`,
+      `Path: ${folder.path}`,
+    ];
+
+    if (folder.createdAt) {
+      tooltipLines.push(`Created: ${formatDateTime(folder.createdAt)}`);
+    }
+
+    this.tooltip = tooltipLines.join('\n');
     this.id = `folder-${folder.notebookId}-${folder.path}`;
 
     // Set resource URI to enable Git decorations from VS Code's Git extension
@@ -211,7 +222,25 @@ export class NoteTreeItem extends TreeItem {
 
     this.contextValue = 'noteItem';
     this.iconPath = new vscode.ThemeIcon('markdown');
-    this.tooltip = note.name;
+
+    // Build detailed tooltip
+    const tooltipLines = [
+      `📝 ${note.name}`,
+    ];
+
+    if (note.folderPath) {
+      tooltipLines.push(`Folder: ${note.folderPath}`);
+    }
+
+    if (note.createdAt) {
+      tooltipLines.push(`Created: ${formatDateTime(note.createdAt)}`);
+    }
+
+    if (note.updatedAt) {
+      tooltipLines.push(`Modified: ${formatDateTime(note.updatedAt)}`);
+    }
+
+    this.tooltip = tooltipLines.join('\n');
     this.id = `note-${note.notebookId}-${note.name}`;
 
     // Set resource URI to enable Git decorations from VS Code's Git extension
