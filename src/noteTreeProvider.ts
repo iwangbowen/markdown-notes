@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { Notebook, Note, Folder } from './types';
 import { NotebookManager } from './notebookManager';
 import { GitManager } from './gitManager';
+import { formatDateTime, formatRelativeDate } from './utils/dateFormatter';
 
 /**
  * TreeView base node class
@@ -110,7 +111,7 @@ export class NotebookTreeItem extends TreeItem {
 
     // Git initialized (will be updated by async check)
     const lastSyncText = gitConfig.lastSync
-      ? `Last sync: ${new Date(gitConfig.lastSync).toLocaleString()}`
+      ? `Last sync: ${formatDateTime(gitConfig.lastSync)}`
       : 'Not synced yet';
 
     this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.green'));
@@ -132,7 +133,7 @@ export class NotebookTreeItem extends TreeItem {
 
       const gitConfig = this.notebook.gitConfig!;
       const lastSyncText = gitConfig.lastSync
-        ? `Last sync: ${new Date(gitConfig.lastSync).toLocaleString()}`
+        ? `Last sync: ${formatDateTime(gitConfig.lastSync)}`
         : 'Not synced yet';
 
       // Build status indicators
@@ -230,20 +231,11 @@ export class NoteTreeItem extends TreeItem {
     }
   }
 
+  /**
+   * Format date for display
+   */
   private formatDate(date: Date): string {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) {
-      return 'Today';
-    } else if (days === 1) {
-      return 'Yesterday';
-    } else if (days < 7) {
-      return `${days}d ago`;
-    } else {
-      return date.toLocaleDateString('en-US');
-    }
+    return formatRelativeDate(date);
   }
 }
 

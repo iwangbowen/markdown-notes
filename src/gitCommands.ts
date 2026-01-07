@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { formatDateTime } from './utils/dateFormatter';
 import { GitManager } from './gitManager';
 import { NotebookManager } from './notebookManager';
 import { NotebookTreeItem } from './noteTreeProvider';
@@ -503,7 +504,7 @@ export function registerGitCommands(
                 const status = await gitManager.getStatus(notebook.id);
 
                 const lastSync = gitConfig.lastSync
-                    ? new Date(gitConfig.lastSync).toLocaleString()
+                    ? formatDateTime(gitConfig.lastSync)
                     : 'Never';
 
                 vscode.window.showInformationMessage(

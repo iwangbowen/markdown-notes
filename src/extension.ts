@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { StorageManager } from './utils/storage';
 import { Logger } from './utils/logger';
+import { formatDateTime } from './utils/dateFormatter';
 import { NotebookManager } from './notebookManager';
 import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem, FolderTreeItem } from './noteTreeProvider';
 import { GitManager } from './gitManager';
@@ -527,7 +528,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
         const items: CommitQuickPickItem[] = history.map(commit => {
           const date = new Date(commit.timestamp);
-          const dateStr = date.toLocaleString();
+          const dateStr = formatDateTime(date);
 
           return {
             label: `$(git-commit) ${commit.message.split('\n')[0]}`,
