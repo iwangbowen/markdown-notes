@@ -128,9 +128,6 @@ export async function activate(context: vscode.ExtensionContext) {
   // Run on activation
   await excludeNotebookRepos();
 
-  // Also run when new notebooks are created (listen to tree refresh)
-  // This will be handled by the create notebook command
-
   // Initialize git manager
   const gitManager = new GitManager(context, storageManager.getStorageUri());
 

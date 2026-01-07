@@ -255,13 +255,15 @@ export class NoteTreeItem extends TreeItem {
     this.tooltip = tooltipLines.join('\n');
     this.id = `note-${note.notebookId}-${note.name}`;
 
-    // Set resource URI to enable Git decorations from VS Code's Git extension
-    this.resourceUri = noteUri;
+    // 双重 URI 策略：
+    // 1. resourceUri 使用自定义 scheme (mdnotes://) 用于显示装饰
+    // 2. command 使用真实的 file:// URI 用于打开文件
+    this.resourceUri = vscode.Uri.parse(`mdnotes:${noteUri.fsPath}`);
 
-    // Click to open note
+    // Click to open note (使用真实的 file:// URI)
     this.command = {
       command: 'vscode.open',
-      arguments: [noteUri],
+      arguments: [noteUri],  // 真实的 file:// URI
       title: 'Open Note'
     };
 

@@ -63,19 +63,34 @@ export class GitDecorationProvider implements vscode.FileDecorationProvider {
     async provideFileDecoration(
         uri: vscode.Uri
     ): Promise<vscode.FileDecoration | undefined> {
+        this.logger.debug(`provideFileDecoration called for: ${uri.toString()}`, 'GitDecoration');
+
         try {
-            const storagePath = this.storageUri.fsPath;
-            if (!uri.fsPath.startsWith(storagePath) || !uri.fsPath.endsWith('.md')) {
+            // 只装饰 mdnotes:// scheme 的 URI
+            if (uri.scheme !== 'mdnotes') {
+                return undefined;
+            }
+
+            // 确保是 .md 文件
+            if (!uri.fsPath.endsWith('.md')) {
+                this.logger.debug(`Skipping non-markdown file: ${uri.fsPath}`, 'GitDecoration');
                 return undefined;
             }
 
             const status = await this.getFileStatus(uri);
             if (!status) {
+                this.logger.debug(`No git status for: ${uri.fsPath}`, 'GitDecoration');
                 return undefined;
             }
 
-            return this.createDecoration(status);
+            const decoration = this.createDecoration(status);
+            if (decoration) {
+                this.logger.debug(`Decoration for ${uri.fsPath}: ${status} → ${decoration.badge}`, 'GitDecoration');
+            }
+
+            return decoration;
         } catch (error) {
+            this.logger.error(`Error providing decoration: ${error}`, 'GitDecoration');
             return undefined;
         }
     }
