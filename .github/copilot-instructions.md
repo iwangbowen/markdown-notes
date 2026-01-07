@@ -8,7 +8,7 @@ This is a VS Code extension for multi-notebook Markdown note management with Git
 globalState (VS Code cloud sync)    globalStorageUri (local files)    Git Remote (GitHub)
 ├─ Notebook metadata                ├─ *.md files                      ├─ File content
 ├─ Git config                       └─ .git/ repos                     └─ Version history
-└─ Auto-syncs ✅                    └─ No auto-sync ✗                 └─ Manual sync
+└─ Auto-syncs ✅                    └─ No auto-sync ✗                 └─ Manual/Auto sync
 ```
 
 **Critical**: `globalState.setKeysForSync()` MUST be called in `StorageManager` constructor to enable cross-device config sync.
@@ -44,22 +44,56 @@ this.logger.info(`Initializing git repository at: ${dir}`, 'Git');
 - `gitInit`: Create empty repo, set `initialized: true`
 - `gitClone`: Download from remote, set `initialized: true`
 
+**Git status verification**:
+- `isInitialized()`: Checks actual `.git` directory existence
+- `hasCredentials()`: Checks if credentials are stored in SecretStorage
+- `getStatus()`: Returns uncommitted changes and unpushed commits (compares local vs remote)
+
 ### 3. NoteTreeProvider (`src/noteTreeProvider.ts`)
 
-TreeView items with **visual Git status**:
+TreeView items with **visual Git status** and **enhanced tooltips**:
 
 ```typescript
-if (!gitConfig.initialized) {
-  this.iconPath = new vscode.ThemeIcon('notebook', new vscode.ThemeColor('charts.yellow'));
-  this.description = '$(warning) Not initialized';
-}
+// Notebook tooltip shows detailed Git status
+this.tooltip = `${this.notebook.name}\n✓ Git initialized\nRemote: ${url}\nBranch: ${branch}\nUncommitted: ${count}\nLast sync: ${formatDateTime(timestamp)}`;
+
+// Folder tooltip shows path and creation time
+this.tooltip = `📁 ${folder.name}\nPath: ${folder.path}\nCreated: ${formatDateTime(createdAt)}`;
+
+// Note tooltip shows detailed metadata
+this.tooltip = `📝 ${note.name}\nFolder: ${folderPath}\nCreated: ${formatDateTime(createdAt)}\nModified: ${formatDateTime(updatedAt)}`;
 ```
 
+**Git status indicators**:
 - Gray: No Git config
 - Yellow + warning: Configured but not initialized
 - Green + branch: Initialized and ready
 
-### 4. Extension Activation (`src/extension.ts`)
+### 4. GitStatusRefresher (`src/gitStatusRefresher.ts`)
+
+**Auto-refresh Git status** in background:
+
+```typescript
+// Configuration: markdownNotes.git.autoRefreshInterval (10-300 seconds, ≤0 = disabled)
+const interval = config.get<number>('autoRefreshInterval', 30);
+
+// Validates range and normalizes to 10-300 seconds
+// Runs silently in background, updates TreeView automatically
+```
+
+### 5. Date Formatter (`src/utils/dateFormatter.ts`)
+
+**Unified time formatting** (local timezone):
+
+```typescript
+formatDateTime(timestamp)  // "2026-01-07 17:16:36" (local time)
+formatDate(timestamp)      // "2026-01-07" (local date)
+formatRelativeDate(timestamp) // "Today" / "Yesterday" / "3d ago" / "2026-01-01"
+```
+
+**Zero dependencies**, pure JavaScript, ~1KB compiled size.
+
+### 6. Extension Activation (`src/extension.ts`)
 
 **Auto-detect cross-device sync**: On activation, check for notebooks with `gitConfig.initialized: true` but no local `.git/`:
 
@@ -87,6 +121,28 @@ const notebookUri = vscode.Uri.joinPath(globalStorageUri, 'notebooks', notebook.
 await vscode.workspace.fs.createDirectory(notebookUri);
 ```
 
+### Rename Operations
+
+Three distinct rename patterns based on what's being renamed:
+
+```typescript
+// Notebook rename: Only update globalState (config layer)
+await notebookManager.renameNotebook(notebookId, newName);
+// ✅ Config syncs across devices
+// ❌ File system unchanged (notebook ID remains)
+
+// Folder rename: Move file system folder, Git auto-tracks
+await notebookManager.renameFolder(notebookId, folderPath, newName);
+// Uses vscode.workspace.fs.rename()
+// Git automatically detects and tracks the move
+
+// Note rename: Rename file, Git auto-tracks
+await notebookManager.renameNote(noteUri, newName);
+// Uses vscode.workspace.fs.rename()
+// Git automatically detects and tracks the rename
+// Auto-switches to new file if currently open
+```
+
 ### Git Credentials Security
 
 Never store in globalState! Use SecretStorage:
@@ -100,6 +156,40 @@ const stored = await this.context.secrets.get(`git-auth-${notebookId}`);
 ```
 
 SecretStorage auto-syncs across devices (encrypted).
+
+### Git Status Accuracy
+
+Always verify actual Git state, not just config flags:
+
+```typescript
+// ✅ Correct: Check actual .git directory
+const actuallyInitialized = await gitManager.isInitialized(notebookId);
+
+// ❌ Wrong: Only check config flag
+const configSaysInitialized = notebook.gitConfig?.initialized;
+
+// Compare to detect mismatches and show detailed warnings
+if (configSaysInitialized && !actuallyInitialized) {
+  // Show warning: "Configured but not initialized"
+  // Display missing credentials info
+}
+```
+
+### Time Formatting
+
+Always use unified date formatter for consistency:
+
+```typescript
+import { formatDateTime, formatDate, formatRelativeDate } from './utils/dateFormatter';
+
+// All times in LOCAL timezone (not UTC)
+const timestamp = Date.now();
+formatDateTime(timestamp)  // "2026-01-07 17:16:36"
+formatDate(timestamp)      // "2026-01-07"
+formatRelativeDate(timestamp) // "Today" / "Yesterday" / "3d ago"
+```
+
+**Never** use `.toISOString()` directly (returns UTC time).
 
 ### TreeView Filtering
 
@@ -242,8 +332,11 @@ Always use `dir: string` (fsPath), not `vscode.Uri`.
 ## Key Files Reference
 
 - `src/utils/storage.ts`: All persistence logic, setKeysForSync setup
-- `src/gitManager.ts`: Git operations, credentials, logging
-- `src/extension.ts`: Activation, cross-device sync detection
-- `src/noteTreeProvider.ts`: TreeView, visual status indicators
+- `src/utils/dateFormatter.ts`: Unified time formatting (local timezone)
+- `src/gitManager.ts`: Git operations, credentials, logging, status verification
+- `src/gitStatusRefresher.ts`: Auto-refresh Git status in background
+- `src/extension.ts`: Activation, cross-device sync detection, command registration
+- `src/noteTreeProvider.ts`: TreeView, visual status indicators, enhanced tooltips
+- `src/notebookManager.ts`: CRUD operations for notebooks/folders/notes, rename logic
 - `ARCHITECTURE.md`: Detailed storage architecture
 - `CRITICAL_FIX_SYNC.md`: setKeysForSync explanation
