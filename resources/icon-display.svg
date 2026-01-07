@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="page" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F8FAFC;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Notebook body (white page) - full canvas -->
+  <rect width="128" height="128" rx="20" fill="url(#page)"/>
+
+  <!-- Markdown symbol - larger M (left-center) -->
+  <g transform="translate(24, 32)">
+    <path d="M 0 0 L 0 48 M 0 0 L 30 32 L 60 0 L 60 48"
+          stroke="#3B82F6" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Down arrow (sync/save) - below M -->
+  <g transform="translate(54, 84)">
+    <line x1="0" y1="0" x2="0" y2="20" stroke="#10B981" stroke-width="8" stroke-linecap="round"/>
+    <path d="M -8 12 L 0 20 L 8 12" stroke="#10B981" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Decorative note lines (right side, clustered) -->
+  <line x1="98" y1="42" x2="118" y2="42" stroke="#CBD5E0" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="98" y1="52" x2="112" y2="52" stroke="#CBD5E0" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="98" y1="62" x2="118" y2="62" stroke="#CBD5E0" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="98" y1="72" x2="108" y2="72" stroke="#CBD5E0" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="98" y1="82" x2="118" y2="82" stroke="#CBD5E0" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+</svg>
