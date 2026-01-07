@@ -57,6 +57,14 @@ export class GitManager {
     }
 
     /**
+     * Check if credentials are stored for a notebook
+     */
+    async hasCredentials(notebookId: string): Promise<boolean> {
+        const credentials = await this.getCredentials(notebookId);
+        return credentials !== undefined;
+    }
+
+    /**
      * Store git credentials in secret storage
      */
     async storeCredentials(notebookId: string, credentials: GitCredentials): Promise<void> {

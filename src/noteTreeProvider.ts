@@ -24,7 +24,7 @@ export class NotebookTreeItem extends TreeItem {
 
   constructor(
     public readonly notebook: Notebook,
-    private gitManager?: GitManager
+    private readonly gitManager?: GitManager
   ) {
     super(notebook.name, vscode.TreeItemCollapsibleState.Collapsed, 'notebook');
 
@@ -33,10 +33,54 @@ export class NotebookTreeItem extends TreeItem {
 
     // Set initial icon based on config (synchronous)
     this.updateGitStatusSync();
+  }
 
-    // Update with actual Git status (asynchronous)
-    if (gitManager && notebook.gitConfig?.initialized) {
-      this.updateGitStatusAsync();
+  /**
+   * Initialize async status check
+   * Called by TreeProvider after construction
+   */
+  async initializeGitStatus(): Promise<void> {
+    if (!this.gitManager || !this.notebook.gitConfig) {
+      return;
+    }
+
+    try {
+      const actuallyInitialized = await this.gitManager.isInitialized(this.notebook.id);
+      const configSaysInitialized = this.notebook.gitConfig.initialized;
+      const hasCredentials = await this.gitManager.hasCredentials(this.notebook.id);
+
+      // If config says initialized but actually not, show warning state
+      if (configSaysInitialized && !actuallyInitialized) {
+        const gitConfig = this.notebook.gitConfig;
+
+        // Build detailed missing info message
+        const missingInfo: string[] = [];
+        if (!hasCredentials) {
+          missingInfo.push('❌ Authentication credentials not configured');
+        }
+        missingInfo.push('❌ Local repository not initialized');
+
+        const missingInfoText = missingInfo.length > 0
+          ? '\n\n' + missingInfo.join('\n')
+          : '';
+
+        const nextSteps = hasCredentials
+          ? 'Right-click → "Clone Git Repository"'
+          : '1. Right-click → "Configure Git" to set credentials\n2. Right-click → "Clone Git Repository"';
+
+        this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('charts.yellow'));
+        this.tooltip = `${this.notebook.name}\n⚠️ Git configured but not initialized locally\nRemote: ${gitConfig.remoteUrl}\nBranch: ${gitConfig.branch}${missingInfoText}\n\n💡 Next steps:\n${nextSteps}`;
+        this.description = 'Not initialized';
+        return;
+      }
+
+      // If actually initialized, update with real Git status
+      if (actuallyInitialized) {
+        await this.updateGitStatusAsync();
+      }
+    } catch (error) {
+      // Silently keep the synchronous status on error
+      console.error(`Failed to verify Git status for ${this.notebook.name}:`, error);
     }
   }
 
@@ -123,7 +167,8 @@ export class NotebookTreeItem extends TreeItem {
         `${lastSyncText}`;
 
     } catch (error) {
-      // Fail silently, keep the synchronous status
+      // Keep the synchronous status on error
+      console.error(`Failed to update Git status for ${this.notebook.name}:`, error);
     }
   }
 }
@@ -204,17 +249,17 @@ export class NoteTreeItem extends TreeItem {
  * Tree view data provider
  */
 export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
-  private _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined | null | void>();
+  private readonly _onDidChangeTreeData = new vscode.EventEmitter<TreeItem | undefined | null | void>();
   readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
   // Cache for parent relationships
-  private parentMap = new Map<string, TreeItem>();
-  private folderIconPath: vscode.Uri;
+  private readonly parentMap = new Map<string, TreeItem>();
+  private readonly folderIconPath: vscode.Uri;
 
   constructor(
-    private context: vscode.ExtensionContext,
-    private notebookManager: NotebookManager,
-    private gitManager?: GitManager  // Optional: for Git status checking
+    private readonly context: vscode.ExtensionContext,
+    private readonly notebookManager: NotebookManager,
+    private readonly gitManager?: GitManager  // Optional: for Git status checking
   ) {
     // Set custom folder icon path
     this.folderIconPath = vscode.Uri.joinPath(context.extensionUri, 'resources', 'folder.svg');
@@ -290,7 +335,20 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
       return [];
     }
 
-    return notebooks.map(notebook => new NotebookTreeItem(notebook, this.gitManager));
+    const items = notebooks.map(notebook => new NotebookTreeItem(notebook, this.gitManager));
+
+    // Initialize Git status asynchronously for all items
+    // Don't await - let them update in background
+    items.forEach(item => {
+      item.initializeGitStatus().then(() => {
+        // Refresh the tree item after status is updated
+        this._onDidChangeTreeData.fire(item);
+      }).catch(() => {
+        // Ignore errors - item will keep initial status
+      });
+    });
+
+    return items;
   }
 
   /**
