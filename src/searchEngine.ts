@@ -9,6 +9,7 @@ export interface SearchOptions {
     query: string;                    // Search keyword or pattern
     caseSensitive?: boolean;          // Case-sensitive search, default: false
     useRegex?: boolean;               // Use regular expression, default: false
+    tags?: string[];                  // Filter by tags (OR logic: match any tag)
     scope?: {                         // Search scope (optional)
         notebookId?: string;           // Limit to specific notebook
         folderPath?: string;           // Limit to specific folder
@@ -34,6 +35,7 @@ export interface SearchResult {
     notebookName: string;             // Parent notebook name
     noteName: string;                 // Note filename (without .md)
     folderPath: string;               // Folder path (empty string for root)
+    tags?: string[];                  // Tags from note front matter
     matches: SearchMatch[];           // All matches in this note
 }
 
@@ -72,6 +74,19 @@ export class SearchEngine {
 
                 // Search each note
                 for (const note of notes) {
+                    // Filter by tags if specified
+                    if (options.tags && options.tags.length > 0) {
+                        const noteTags = note.tags || [];
+                        const hasMatchingTag = options.tags.some(tag =>
+                            noteTags.some(noteTag =>
+                                noteTag.toLowerCase() === tag.toLowerCase()
+                            )
+                        );
+                        if (!hasMatchingTag) {
+                            continue;
+                        }
+                    }
+
                     const noteResults = await this.searchNote(note.uri, options);
 
                     if (noteResults.matches.length > 0) {
@@ -80,7 +95,8 @@ export class SearchEngine {
                             notebookId: notebook.id,
                             notebookName: notebook.name,
                             noteName: note.name,
-                            folderPath: note.folderPath
+                            folderPath: note.folderPath,
+                            tags: note.tags
                         });
                     }
                 }

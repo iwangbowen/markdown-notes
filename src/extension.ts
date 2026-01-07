@@ -9,6 +9,7 @@ import { GitManager } from './gitManager';
 import { GitStatusRefresher } from './gitStatusRefresher';
 import { SearchEngine, SearchResult } from './searchEngine';
 import { TemplateManager } from './templateManager';
+import { generateFrontMatter } from './utils/yamlFrontMatter';
 import { TemplatePreviewProvider } from './templatePreviewProvider';
 import { GitConfig } from './types';
 
@@ -170,11 +171,27 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand('markdownNotes.searchNotes', async (item?: NotebookTreeItem | FolderTreeItem) => {
       const searchQuery = await vscode.window.showInputBox({
-        prompt: 'Search in notes',
-        placeHolder: 'Enter search keyword',
+        prompt: 'Search in notes (leave empty to search by tags only)',
+        placeHolder: 'Enter search keyword or leave empty',
       });
 
-      if (!searchQuery) {
+      if (searchQuery === undefined) {
+        return;
+      }
+
+      // Ask for tags filter (optional)
+      const tagsInput = await vscode.window.showInputBox({
+        prompt: 'Filter by tags (optional, comma-separated, OR logic)',
+        placeHolder: 'e.g., work, meeting',
+      });
+
+      const tags = tagsInput
+        ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag)
+        : undefined;
+
+      // Skip if both query and tags are empty
+      if (!searchQuery && (!tags || tags.length === 0)) {
+        vscode.window.showWarningMessage('Please enter a search keyword or select tags');
         return;
       }
 
@@ -192,14 +209,16 @@ export async function activate(context: vscode.ExtensionContext) {
       // Perform search
       try {
         const results = await searchEngine.search({
-          query: searchQuery,
+          query: searchQuery || '',
           caseSensitive: false,
           useRegex: false,
+          tags,
           scope: notebookId ? { notebookId, folderPath } : undefined,
         });
 
         if (results.length === 0) {
-          vscode.window.showInformationMessage(`No results found for "${searchQuery}"`);
+          const searchDesc = searchQuery ? `"${searchQuery}"` : 'specified tags';
+          vscode.window.showInformationMessage(`No results found for ${searchDesc}`);
           return;
         }
 
@@ -212,10 +231,15 @@ export async function activate(context: vscode.ExtensionContext) {
 
         const items: QuickPickItem[] = [];
         for (const result of results) {
+          // Add tags info to description if available
+          const tagsInfo = result.tags && result.tags.length > 0
+            ? ` [${result.tags.join(', ')}]`
+            : '';
+
           for (const match of result.matches) {
             items.push({
               label: `$(file-text) ${result.noteName}`,
-              description: `Line ${match.lineNumber} · ${result.notebookName}`,
+              description: `Line ${match.lineNumber} · ${result.notebookName}${tagsInfo}`,
               detail: match.lineText.trim(),
               noteUri: result.noteUri,
               lineNumber: match.lineNumber,
@@ -244,6 +268,125 @@ export async function activate(context: vscode.ExtensionContext) {
       } catch (error) {
         logger.error(`Search failed: ${error}`, 'Search');
         vscode.window.showErrorMessage(`Search failed: ${error}`);
+      }
+    })
+  );
+
+  // Register command: search by tags
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.searchByTags', async (item?: NotebookTreeItem | FolderTreeItem) => {
+      // Get all unique tags from notes
+      let notebookId: string | undefined;
+      let folderPath: string | undefined;
+
+      if (item instanceof NotebookTreeItem) {
+        notebookId = item.notebook.id;
+      } else if (item instanceof FolderTreeItem) {
+        notebookId = item.folder.notebookId;
+        folderPath = item.folder.path;
+      }
+
+      // Collect all tags from all notes
+      const notebooks = notebookId
+        ? [await notebookManager.getNotebooks().then(nbs => nbs.find(n => n.id === notebookId)!)]
+        : await notebookManager.getNotebooks();
+
+      const allTags = new Set<string>();
+      for (const notebook of notebooks.filter(Boolean)) {
+        const getAllNotesRecursively = async (nbId: string, path: string): Promise<void> => {
+          const notes = await notebookManager.getNotes(nbId, path);
+          for (const note of notes) {
+            if (note.tags) {
+              note.tags.forEach(tag => allTags.add(tag));
+            }
+          }
+
+          const folders = await notebookManager.getFolders(nbId, path);
+          for (const folder of folders) {
+            await getAllNotesRecursively(nbId, folder.path);
+          }
+        };
+
+        await getAllNotesRecursively(notebook.id, folderPath || '');
+      }
+
+      if (allTags.size === 0) {
+        vscode.window.showInformationMessage('No tags found in notes');
+        return;
+      }
+
+      // Show tags in QuickPick
+      const tagItems = Array.from(allTags).sort((a, b) => a.localeCompare(b)).map(tag => ({
+        label: `$(tag) ${tag}`,
+        tag
+      }));
+
+      const selectedTags = await vscode.window.showQuickPick(tagItems, {
+        placeHolder: 'Select tags to search (select multiple with Ctrl/Cmd)',
+        canPickMany: true,
+        title: 'Search by Tags'
+      });
+
+      if (!selectedTags || selectedTags.length === 0) {
+        return;
+      }
+
+      const tags = selectedTags.map(item => item.tag);
+
+      // Perform search with selected tags
+      try {
+        const results = await searchEngine.search({
+          query: '',
+          caseSensitive: false,
+          useRegex: false,
+          tags,
+          scope: notebookId ? { notebookId, folderPath } : undefined,
+        });
+
+        if (results.length === 0) {
+          vscode.window.showInformationMessage(`No notes found with tags: ${tags.join(', ')}`);
+          return;
+        }
+
+        // Show results - group by note
+        const noteGroups = new Map<string, SearchResult>();
+        for (const result of results) {
+          const key = result.noteUri.toString();
+          if (!noteGroups.has(key)) {
+            noteGroups.set(key, result);
+          }
+        }
+
+        interface QuickPickItem extends vscode.QuickPickItem {
+          noteUri: vscode.Uri;
+        }
+
+        const items: QuickPickItem[] = Array.from(noteGroups.values()).map(result => {
+          const tagsInfo = result.tags && result.tags.length > 0
+            ? ` [${result.tags.join(', ')}]`
+            : '';
+
+          return {
+            label: `$(file) ${result.noteName}`,
+            description: `${result.notebookName}${tagsInfo}`,
+            detail: result.folderPath || '(Root)',
+            noteUri: result.noteUri
+          };
+        });
+
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: `${items.length} note(s) found with tags: ${tags.join(', ')}`,
+          title: 'Search Results'
+        });
+
+        if (selected) {
+          // Open note
+          const document = await vscode.workspace.openTextDocument(selected.noteUri);
+          await vscode.window.showTextDocument(document);
+        }
+      } catch (error) {
+        logger.error(`Tag search failed: ${error}`, 'Search');
+        vscode.window.showErrorMessage(`Tag search failed: ${error}`);
       }
     })
   );
@@ -335,17 +478,27 @@ export async function activate(context: vscode.ExtensionContext) {
       });
 
       try {
-        // Create note file first
+        // Create note file with empty tags (user can edit front matter manually)
         const note = await notebookManager.createNote(notebookId, name.trim(), folderPath);
 
         // Apply template if selected
         if (selectedTemplate) {
-          const content = await templateManager.applyTemplate(
+          const templateContent = await templateManager.applyTemplate(
             selectedTemplate.template.id,
             { title: name.trim() }
           );
 
-          // Write template content to note
+          // Generate front matter and prepend to template content
+          const now = Date.now();
+          const frontMatter = generateFrontMatter({
+            title: name.trim(),
+            created: formatDateTime(now),
+            tags: []
+          });
+
+          const content = frontMatter + templateContent;
+
+          // Write combined content to note
           const uri = vscode.Uri.parse(note.uri);
           await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
         }

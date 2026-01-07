@@ -5,7 +5,56 @@ All notable changes to the "Markdown Notes Manager" extension will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-08
+
+### Added
+
+- **Tag System** - Organize notes with tags via YAML front matter
+  - **YAML Front Matter**: All new notes include YAML front matter with metadata
+    - `title`: Note title
+    - `created`: Creation timestamp (ISO 8601)
+    - `updated`: Last update timestamp (ISO 8601)
+    - `tags`: Array of tags (empty by default, user can edit manually)
+  - **Manual Tag Management**: Users edit front matter directly to add/remove tags
+  - **Tag Search**: Filter notes by tags with OR logic (match any specified tag)
+  - **Tag Display**: Search results show tags for each matching note
+  - **Auto-extraction**: Tags automatically extracted from notes' front matter
+  - **Flexible Format**: Supports both array format (`tags: [tag1, tag2]`) and multi-line format
+
+### Changed
+
+- **Search Command Enhanced**:
+  - Search query is now optional (can search by tags only)
+  - Added tag filter input after search query
+  - Search results display tags alongside notebook and line information
+  - Improved result messages for tag-only searches
+
+### Technical
+
+- Created `utils/yamlFrontMatter.ts` for parsing and generating YAML front matter
+- Updated `Note` interface to include optional `tags` field
+- Extended `SearchOptions` to support `tags` filter array
+- Modified `NotebookManager.createNote()` to accept optional `tags` parameter
+- Enhanced `NotebookManager.getNotes()` to extract tags from file content
+- Updated `SearchEngine` to filter results by tags
+
 ## [0.2.7] - 2026-01-08
+
+### Changed
+
+- **Command Palette Cleanup**: Streamlined command visibility
+  - Only 5 core commands visible in Command Palette:
+    - Search Notes
+    - Create Notebook
+    - Manage Templates
+    - Show Output Logs
+    - Toggle Git Auto Refresh
+  - 15 context-specific commands hidden (still accessible via TreeView menus and buttons):
+    - Create/Delete/Rename operations
+    - Git operations
+    - File operations (Reveal in Explorer, View History, etc.)
+
+## [0.2.6] - 2026-01-08
 
 ### Added
 

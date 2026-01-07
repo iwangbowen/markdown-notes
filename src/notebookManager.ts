@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { Notebook, Note, Folder } from './types';
 import { StorageManager } from './utils/storage';
+import { generateFrontMatter, extractTags } from './utils/yamlFrontMatter';
+import { formatDateTime } from './utils/dateFormatter';
 
 /**
  * Notebook Manager
@@ -92,9 +94,9 @@ export class NotebookManager {
   }
 
   /**
-   * Create note
+   * Create note with optional tags
    */
-  async createNote(notebookId: string, name: string, folderPath: string = ''): Promise<Note> {
+  async createNote(notebookId: string, name: string, folderPath: string = '', tags?: string[]): Promise<Note> {
     // Ensure filename has .md extension
     const fileName = name.endsWith('.md') ? name : `${name}.md`;
     const notebookUri = this.storageManager.getNotebookUri(notebookId);
@@ -104,8 +106,16 @@ export class NotebookManager {
       ? vscode.Uri.joinPath(notebookUri, folderPath, fileName)
       : vscode.Uri.joinPath(notebookUri, fileName);
 
-    // Initial content
-    const content = `# ${name.replace(/\.md$/, '')}\n\n`;
+    // Generate YAML front matter with local time
+    const now = Date.now();
+    const frontMatter = generateFrontMatter({
+      title: name.replace(/\.md$/, ''),
+      created: formatDateTime(now),
+      ...(tags && tags.length > 0 ? { tags } : {})
+    });
+
+    // Initial content with front matter
+    const content = frontMatter + `# ${name.replace(/\.md$/, '')}\n\n`;
     const buffer = Buffer.from(content, 'utf8');
 
     // Write file
@@ -117,7 +127,8 @@ export class NotebookManager {
       folderPath,
       uri: noteUri.toString(),
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      tags: tags || []
     };
   }
 
@@ -154,13 +165,24 @@ export class NotebookManager {
           // Convert to file: scheme URI for Git decoration support
           const fileUri = vscode.Uri.file(noteUri.fsPath);
 
+          // Read file content to extract tags
+          let tags: string[] = [];
+          try {
+            const fileContent = await vscode.workspace.fs.readFile(noteUri);
+            const content = Buffer.from(fileContent).toString('utf8');
+            tags = extractTags(content);
+          } catch (error) {
+            // If reading fails, just skip tags
+          }
+
           notes.push({
             name: name.replace(/\.md$/, ''),
             notebookId,
             folderPath,
             uri: fileUri.toString(),
             createdAt: stat.ctime,
-            updatedAt: stat.mtime
+            updatedAt: stat.mtime,
+            tags
           });
         }
       }

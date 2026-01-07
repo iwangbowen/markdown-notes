@@ -2,7 +2,7 @@
   "name": "markdown-notes",
   "displayName": "Markdown Notes Manager",
   "description": "Multi-notebook Markdown notes manager with tree view and native editor",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "publisher": "WangBowen",
   "icon": "resources/icon.png",
   "repository": {
@@ -53,6 +53,12 @@
         "title": "Search Notes",
         "category": "Markdown Notes",
         "icon": "$(search)"
+      },
+      {
+        "command": "markdownNotes.searchByTags",
+        "title": "Search by Tags",
+        "category": "Markdown Notes",
+        "icon": "$(tag)"
       },
       {
         "command": "markdownNotes.createNotebook",
@@ -230,6 +236,10 @@
           "when": "true"
         },
         {
+          "command": "markdownNotes.searchByTags",
+          "when": "true"
+        },
+        {
           "command": "markdownNotes.createNotebook",
           "when": "true"
         },
@@ -349,19 +359,24 @@
           "group": "navigation@0"
         },
         {
-          "command": "markdownNotes.createNotebook",
+          "command": "markdownNotes.searchByTags",
           "when": "view == markdownNotesView",
           "group": "navigation@1"
         },
         {
-          "command": "markdownNotes.expandAll",
+          "command": "markdownNotes.createNotebook",
           "when": "view == markdownNotesView",
           "group": "navigation@2"
         },
         {
-          "command": "markdownNotes.refreshTree",
+          "command": "markdownNotes.expandAll",
           "when": "view == markdownNotesView",
           "group": "navigation@3"
+        },
+        {
+          "command": "markdownNotes.refreshTree",
+          "when": "view == markdownNotesView",
+          "group": "navigation@4"
         }
       ],
       "view/item/context": [
@@ -369,6 +384,11 @@
           "command": "markdownNotes.searchNotes",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "0_search@1"
+        },
+        {
+          "command": "markdownNotes.searchByTags",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "0_search@2"
         },
         {
           "command": "markdownNotes.createNote",
@@ -456,6 +476,11 @@
           "group": "0_search@1"
         },
         {
+          "command": "markdownNotes.searchByTags",
+          "when": "view == markdownNotesView && viewItem == folderItem",
+          "group": "0_search@2"
+        },
+        {
           "command": "markdownNotes.createNote",
           "when": "view == markdownNotesView && viewItem == folderItem",
           "group": "inline@1"
@@ -512,6 +537,12 @@
         "command": "markdownNotes.searchNotes",
         "key": "ctrl+shift+f",
         "mac": "cmd+shift+f",
+        "when": "view == markdownNotesView"
+      },
+      {
+        "command": "markdownNotes.searchByTags",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t",
         "when": "view == markdownNotesView"
       }
     ],

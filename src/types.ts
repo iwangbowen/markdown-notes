@@ -79,6 +79,8 @@ export interface Note {
   createdAt?: number;
   /** Last modified timestamp */
   updatedAt?: number;
+  /** Tags from YAML front matter */
+  tags?: string[];
 }
 
 /**
