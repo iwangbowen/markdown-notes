@@ -25,6 +25,8 @@ export interface GitStatus {
   uncommittedChanges: number;
   /** Number of unpushed commits */
   unpushedCommits: number;
+  /** Number of commits behind remote */
+  behindCommits: number;
   /** Whether there are conflicts */
   hasConflicts: boolean;
   /** Current branch */

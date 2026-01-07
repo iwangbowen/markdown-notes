@@ -147,6 +147,10 @@ export class NotebookTreeItem extends TreeItem {
         statusIndicators.push(`↑ ${status.unpushedCommits}`);
       }
 
+      if (status.behindCommits > 0) {
+        statusIndicators.push(`↓ ${status.behindCommits}`);
+      }
+
       // Update description
       if (statusIndicators.length > 0) {
         this.description = `⎇ ${gitConfig.branch}  ${statusIndicators.join(' ')}`;
@@ -160,14 +164,22 @@ export class NotebookTreeItem extends TreeItem {
       }
 
       // Update tooltip with detailed status
-      this.tooltip =
-        `${this.notebook.name}\n` +
-        `✓ Git initialized\n` +
-        `Remote: ${gitConfig.remoteUrl}\n` +
-        `Branch: ${gitConfig.branch}\n` +
-        `Uncommitted changes: ${status.uncommittedChanges}\n` +
-        `Unpushed commits: ${status.unpushedCommits}\n` +
-        `${lastSyncText}`;
+      const tooltipLines = [
+        this.notebook.name,
+        '✓ Git initialized',
+        `Remote: ${gitConfig.remoteUrl}`,
+        `Branch: ${gitConfig.branch}`,
+        `Uncommitted changes: ${status.uncommittedChanges}`,
+        `Unpushed commits: ${status.unpushedCommits}`
+      ];
+
+      if (status.behindCommits > 0) {
+        tooltipLines.push(`Behind commits: ${status.behindCommits}`);
+      }
+
+      tooltipLines.push(lastSyncText);
+
+      this.tooltip = tooltipLines.join('\n');
 
     } catch (error) {
       // Keep the synchronous status on error

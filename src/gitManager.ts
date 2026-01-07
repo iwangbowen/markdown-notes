@@ -327,40 +327,62 @@ export class GitManager {
                 branch = 'main';
             }
 
-            // Calculate unpushed commits by comparing with remote
+            // Calculate unpushed commits and behind commits by comparing with remote
             let unpushedCommits = 0;
+            let behindCommits = 0;
             try {
-                // Get local commits
-                const localCommits = await git.log({ fs, dir, ref: branch });
+                // Get local and remote commit IDs
+                const localOid = await git.resolveRef({ fs, dir, ref: branch });
 
                 // Try to get remote commits
                 try {
-                    const remoteCommits = await git.log({ fs, dir, ref: `origin/${branch}` });
-                    const remoteHead = remoteCommits[0]?.oid;
+                    const remoteOid = await git.resolveRef({ fs, dir, ref: `origin/${branch}` });
 
-                    // Count commits in local but not in remote
-                    for (const commit of localCommits) {
-                        if (commit.oid === remoteHead) {
-                            break; // Found common ancestor
+                    // If local and remote are different, count unpushed and behind commits
+                    if (localOid !== remoteOid) {
+                        // Get all local and remote commits
+                        const localCommits = await git.log({ fs, dir, ref: branch });
+                        const remoteCommits = await git.log({ fs, dir, ref: `origin/${branch}` });
+
+                        // Create sets for fast lookup
+                        const localOids = new Set(localCommits.map(c => c.oid));
+                        const remoteOids = new Set(remoteCommits.map(c => c.oid));
+
+                        // Count commits in local that are not in remote (unpushed)
+                        for (const commit of localCommits) {
+                            if (remoteOids.has(commit.oid)) {
+                                // Found common ancestor, stop counting
+                                break;
+                            }
+                            unpushedCommits++;
                         }
-                        unpushedCommits++;
+
+                        // Count commits in remote that are not in local (behind)
+                        for (const commit of remoteCommits) {
+                            if (localOids.has(commit.oid)) {
+                                // Found common ancestor, stop counting
+                                break;
+                            }
+                            behindCommits++;
+                        }
                     }
                 } catch {
                     // No remote branch yet (fresh clone or new branch)
                     // All local commits are unpushed
+                    const localCommits = await git.log({ fs, dir, ref: branch });
                     unpushedCommits = localCommits.length;
                 }
             } catch (error) {
                 // No commits yet (empty repo)
                 console.debug('No commits found (empty repository)', error);
-                unpushedCommits = 0;
             }
 
-            this.logger.info(`Status: ${uncommittedChanges} uncommitted, ${unpushedCommits} unpushed, branch: ${branch}`, 'Git');
+            this.logger.info(`Status: ${uncommittedChanges} uncommitted, ${unpushedCommits} unpushed, ${behindCommits} behind, branch: ${branch}`, 'Git');
 
             return {
                 uncommittedChanges,
                 unpushedCommits,
+                behindCommits,
                 hasConflicts: false,
                 branch
             };
@@ -384,6 +406,7 @@ export class GitManager {
                 .filter(([_, head, workdir, stage]) => head !== workdir || head !== stage)
                 .map(([filepath]) => filepath);
         } catch (error) {
+            this.logger.error(`Failed to get changed files: ${error}`, 'Git');
             return [];
         }
     }
