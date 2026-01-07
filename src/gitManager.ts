@@ -389,6 +389,28 @@ export class GitManager {
     }
 
     /**
+     * Get list of changed files with full paths (public method)
+     */
+    async getChangedFilesWithPaths(notebookId: string): Promise<{ relativePath: string; fullPath: string }[]> {
+        const dir = this.getNotebookDir(notebookId);
+
+        try {
+            const status = await git.statusMatrix({ fs, dir });
+
+            // Filter files that have changes and map to full paths
+            return status
+                .filter(([_, head, workdir, stage]) => head !== workdir || head !== stage)
+                .map(([filepath]) => ({
+                    relativePath: filepath,
+                    fullPath: path.join(dir, filepath)
+                }));
+        } catch (error) {
+            this.logger.error(`Failed to get changed files: ${error}`, 'Git');
+            return [];
+        }
+    }
+
+    /**
      * Check if git is initialized for a notebook
      */
     async isInitialized(notebookId: string): Promise<boolean> {
@@ -411,7 +433,7 @@ export class GitManager {
 
         try {
             // Normalize file path to relative path from notebook root
-            const relativePath = path.relative(dir, filePath).replace(/\\/g, '/');
+            const relativePath = path.relative(dir, filePath).split('\\').join('/');
 
             // Get status for this file
             const status = await git.status({
@@ -442,7 +464,7 @@ export class GitManager {
 
         try {
             // Normalize file path to relative path from notebook root
-            const relativePath = path.relative(dir, filePath).replaceAll('\\', '/');
+            const relativePath = path.relative(dir, filePath).split('\\').join('/');
 
             this.logger.debug(`Getting history for file: ${relativePath}`, 'Git');
 
@@ -471,7 +493,7 @@ export class GitManager {
                     });
 
                     // If file exists in this commit, include it
-                    const fileExists = entries.some(oid => oid !== undefined);
+                    const fileExists = entries.some((oid: any) => oid !== undefined);
                     if (fileExists) {
                         fileCommits.push({
                             oid: commit.oid,
@@ -501,7 +523,7 @@ export class GitManager {
         const dir = this.getNotebookDir(notebookId);
 
         try {
-            const relativePath = path.relative(dir, filePath).replaceAll('\\', '/');
+            const relativePath = path.relative(dir, filePath).split('\\').join('/');
 
             this.logger.debug(`Reading file ${relativePath} at commit ${commitOid.substring(0, 7)}`, 'Git');
 
@@ -520,7 +542,7 @@ export class GitManager {
                 }
             });
 
-            const blob = result.find(b => b !== undefined);
+            const blob = result.find((b: any) => b !== undefined);
             if (!blob) {
                 throw new Error('File not found in commit');
             }
@@ -539,7 +561,7 @@ export class GitManager {
         const dir = this.getNotebookDir(notebookId);
 
         try {
-            const relativePath = path.relative(dir, filePath).replaceAll('\\', '/');
+            const relativePath = path.relative(dir, filePath).split('\\').join('/');
 
             this.logger.info(`Resetting file ${relativePath} to HEAD`, 'Git');
 
@@ -561,7 +583,7 @@ export class GitManager {
                 }
             });
 
-            const blob = result.find(b => b !== undefined);
+            const blob = result.find((b: any) => b !== undefined);
             if (!blob) {
                 throw new Error('File not found in HEAD commit');
             }

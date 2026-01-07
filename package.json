@@ -199,6 +199,12 @@
         "icon": "$(git-branch)"
       },
       {
+        "command": "markdownNotes.viewAllChanges",
+        "title": "View All Changes",
+        "category": "Markdown Notes",
+        "icon": "$(diff)"
+      },
+      {
         "command": "markdownNotes.showOutput",
         "title": "Show Output Logs",
         "category": "Markdown Notes",
@@ -346,6 +352,10 @@
           "when": "false"
         },
         {
+          "command": "markdownNotes.viewAllChanges",
+          "when": "false"
+        },
+        {
           "command": "markdownNotes.revealInExplorer",
           "when": "false"
         },
@@ -459,6 +469,11 @@
           "command": "markdownNotes.gitStatus",
           "when": "view == markdownNotesView && viewItem == notebookItem",
           "group": "3_git@8"
+        },
+        {
+          "command": "markdownNotes.viewAllChanges",
+          "when": "view == markdownNotesView && viewItem == notebookItem",
+          "group": "3_git@9"
         },
         {
           "command": "markdownNotes.showOutput",

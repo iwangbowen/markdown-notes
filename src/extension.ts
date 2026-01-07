@@ -1185,6 +1185,67 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
+  // Register command: view all changes in notebook
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.viewAllChanges', async (item: NotebookTreeItem) => {
+      if (!item || !item.notebook) {
+        vscode.window.showWarningMessage('Please select a notebook');
+        return;
+      }
+
+      const notebook = item.notebook;
+
+      if (!notebook.gitConfig || !notebook.gitConfig.initialized) {
+        vscode.window.showWarningMessage('Git repository not initialized for this notebook');
+        return;
+      }
+
+      try {
+        const changedFiles = await gitManager.getChangedFilesWithPaths(notebook.id);
+
+        if (changedFiles.length === 0) {
+          vscode.window.showInformationMessage('No uncommitted changes in this notebook');
+          return;
+        }
+
+        // Filter only markdown files
+        const mdFiles = changedFiles.filter(file => file.relativePath.endsWith('.md'));
+
+        if (mdFiles.length === 0) {
+          vscode.window.showInformationMessage('No markdown file changes in this notebook');
+          return;
+        }
+
+        // Show QuickPick with all changed files
+        interface ChangeItem extends vscode.QuickPickItem {
+          filePath: string;
+        }
+
+        const items: ChangeItem[] = mdFiles.map(file => ({
+          label: `$(diff-modified) ${path.basename(file.relativePath)}`,
+          description: path.dirname(file.relativePath),
+          detail: 'Click to view changes',
+          filePath: file.fullPath
+        }));
+
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: `${mdFiles.length} modified file(s) in ${notebook.name}`,
+          title: 'View Changes',
+          canPickMany: false
+        });
+
+        if (selected) {
+          // Open the file with Git diff view
+          const uri = vscode.Uri.file(selected.filePath);
+          await vscode.commands.executeCommand('git.openChange', uri);
+        }
+      } catch (error) {
+        logger.error(`Failed to view changes: ${error}`, 'Git');
+        vscode.window.showErrorMessage(`Failed to view changes: ${error}`);
+      }
+    })
+  );
+
   // Register Git commands
   const { registerGitCommands } = await import('./gitCommands');
   registerGitCommands(context, gitManager, notebookManager, () => treeProvider.refresh());
