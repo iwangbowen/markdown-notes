@@ -1216,29 +1216,33 @@ export async function activate(context: vscode.ExtensionContext) {
           return;
         }
 
-        // Show QuickPick with all changed files
-        interface ChangeItem extends vscode.QuickPickItem {
-          filePath: string;
-        }
+        // Prepare resource list for vscode.changes API
+        // Format: array of [label, original, modified] tuples
+        const resourceList: [vscode.Uri, vscode.Uri, vscode.Uri][] = mdFiles.map(file => {
+          const modifiedUri = vscode.Uri.file(file.fullPath);
 
-        const items: ChangeItem[] = mdFiles.map(file => ({
-          label: `$(diff-modified) ${path.basename(file.relativePath)}`,
-          description: path.dirname(file.relativePath),
-          detail: 'Click to view changes',
-          filePath: file.fullPath
-        }));
+          // Use git scheme for HEAD version
+          const originalUri = modifiedUri.with({
+            scheme: 'git',
+            path: modifiedUri.path,
+            query: JSON.stringify({
+              path: modifiedUri.fsPath,
+              ref: 'HEAD'
+            })
+          });
 
-        const selected = await vscode.window.showQuickPick(items, {
-          placeHolder: `${mdFiles.length} modified file(s) in ${notebook.name}`,
-          title: 'View Changes',
-          canPickMany: false
+          // Label URI (used for display name)
+          const labelUri = modifiedUri;
+
+          return [labelUri, originalUri, modifiedUri];
         });
 
-        if (selected) {
-          // Open the file with Git diff view
-          const uri = vscode.Uri.file(selected.filePath);
-          await vscode.commands.executeCommand('git.openChange', uri);
-        }
+        // Call vscode.changes with title and resource list
+        await vscode.commands.executeCommand(
+          'vscode.changes',
+          `Changes in ${notebook.name} (${mdFiles.length} file${mdFiles.length > 1 ? 's' : ''})`,
+          resourceList
+        );
       } catch (error) {
         logger.error(`Failed to view changes: ${error}`, 'Git');
         vscode.window.showErrorMessage(`Failed to view changes: ${error}`);
