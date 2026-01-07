@@ -21,7 +21,6 @@ export class TreeItem extends vscode.TreeItem {
  */
 export class NotebookTreeItem extends TreeItem {
   private gitStatusChecked = false;
-  private isSyncing = false;
 
   constructor(
     public readonly notebook: Notebook,
@@ -85,20 +84,7 @@ export class NotebookTreeItem extends TreeItem {
     }
   }
 
-  /**
-   * Set syncing state
-   */
-  setSyncing(syncing: boolean): void {
-    this.isSyncing = syncing;
-    if (syncing) {
-      // Show syncing icon
-      this.iconPath = new vscode.ThemeIcon('sync~spin', new vscode.ThemeColor('charts.blue'));
-      this.description = 'Syncing...';
-    } else {
-      // Restore normal icon
-      this.updateGitStatusSync();
-    }
-  }
+
 
   /**
    * Update icon and decoration based on Git configuration (synchronous)
@@ -373,25 +359,30 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
    */
   async refreshGitStatus(): Promise<void> {
     const notebooks = await this.notebookManager.getNotebooks();
+    const items: NotebookTreeItem[] = [];
 
+    // Create items for all notebooks with Git config
     for (const notebook of notebooks) {
-      if (!notebook.gitConfig || !this.gitManager) {
-        continue;
+      if (notebook.gitConfig?.initialized && this.gitManager) {
+        const item = new NotebookTreeItem(notebook, this.gitManager);
+        items.push(item);
       }
-
-      const item = new NotebookTreeItem(notebook, this.gitManager);
-
-      // Show syncing state
-      item.setSyncing(true);
-      this._onDidChangeTreeData.fire(item);
-
-      // Update Git status asynchronously
-      await item.initializeGitStatus();
-
-      // Restore normal state
-      item.setSyncing(false);
-      this._onDidChangeTreeData.fire(item);
     }
+
+    if (items.length === 0) {
+      return; // No notebooks to sync
+    }
+
+    // Update all Git statuses in parallel
+    await Promise.all(
+      items.map(item =>
+        item.initializeGitStatus().catch(() => {
+          // Silently ignore errors
+        })
+      )
+    );
+
+    this._onDidChangeTreeData.fire(undefined);
   }
 
   /**

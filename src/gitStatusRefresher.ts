@@ -73,29 +73,11 @@ export class GitStatusRefresher {
      * Refresh Git status for all notebooks
      */
     private async refreshGitStatus(): Promise<void> {
-        const config = vscode.workspace.getConfiguration('markdownNotes.git');
-        const showIndicator = config.get<boolean>('showSyncIndicator', true);
-
         this.logger.debug('Auto refreshing Git status...', 'GitRefresh');
 
         try {
-            if (showIndicator) {
-                // Show non-intrusive status bar indicator
-                await vscode.window.withProgress({
-                    location: vscode.ProgressLocation.Window,  // Status bar location
-                    title: '$(sync~spin) Syncing Git status...',
-                    cancellable: false
-                }, async () => {
-                    await this.treeProvider.refreshGitStatus();
-
-                    // Brief delay to show completion state
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                });
-            } else {
-                // Silent refresh
-                await this.treeProvider.refreshGitStatus();
-            }
-
+            // Silently refresh in background
+            await this.treeProvider.refreshGitStatus();
             this.logger.debug('Git status refreshed successfully', 'GitRefresh');
         } catch (error) {
             this.logger.error(`Failed to refresh Git status: ${error}`, 'GitRefresh');
@@ -106,6 +88,7 @@ export class GitStatusRefresher {
      * Restart with new settings
      */
     restart(): void {
+        this.stop();
         this.logger.info('Restarting auto refresh with new settings', 'GitRefresh');
         this.start();
     }
