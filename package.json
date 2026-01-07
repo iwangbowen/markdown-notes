@@ -167,6 +167,12 @@
         "title": "Compare with HEAD",
         "category": "Markdown Notes",
         "icon": "$(git-compare)"
+      },
+      {
+        "command": "markdownNotes.toggleAutoRefresh",
+        "title": "Toggle Git Auto Refresh",
+        "category": "Markdown Notes",
+        "icon": "$(sync)"
       }
     ],
     "menus": {
@@ -304,6 +310,21 @@
           "group": "2_git@2"
         }
       ]
+    },
+    "configuration": {
+      "title": "Markdown Notes",
+      "properties": {
+        "markdownNotes.git.autoRefreshInterval": {
+          "type": "number",
+          "default": 30,
+          "markdownDescription": "Auto refresh Git status interval in seconds.\n\n- `0` or **negative**: Disabled (no auto refresh)\n- `10-300`: Refresh every N seconds\n- **Other values**: Will be normalized to valid range or default (30s)"
+        },
+        "markdownNotes.git.showSyncIndicator": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show non-intrusive status bar indicator when syncing Git status"
+        }
+      }
     }
   },
   "scripts": {

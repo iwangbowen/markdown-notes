@@ -5,6 +5,7 @@ import { Logger } from './utils/logger';
 import { NotebookManager } from './notebookManager';
 import { NoteTreeProvider, NotebookTreeItem, NoteTreeItem, FolderTreeItem } from './noteTreeProvider';
 import { GitManager } from './gitManager';
+import { GitStatusRefresher } from './gitStatusRefresher';
 import { GitConfig } from './types';
 
 /**
@@ -134,6 +135,20 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Auto-detect uninitialized notebooks (for cross-device sync)
   await checkUninitializedNotebooks(notebookManager, gitManager, treeProvider, treeView);
+
+  // Initialize Git status auto refresher
+  const gitRefresher = new GitStatusRefresher(context, treeProvider);
+  gitRefresher.start();
+
+  // Listen for configuration changes
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration('markdownNotes.git')) {
+        logger.info('Git configuration changed, restarting auto refresh', 'Core');
+        gitRefresher.restart();
+      }
+    })
+  );
 
   // Register command: create notebook
   context.subscriptions.push(
@@ -510,6 +525,24 @@ export async function activate(context: vscode.ExtensionContext) {
   // Register Git commands
   const { registerGitCommands } = await import('./gitCommands');
   registerGitCommands(context, gitManager, notebookManager, () => treeProvider.refresh());
+
+  // Register command: toggle auto refresh
+  context.subscriptions.push(
+    vscode.commands.registerCommand('markdownNotes.toggleAutoRefresh', async () => {
+      const config = vscode.workspace.getConfiguration('markdownNotes.git');
+      const currentInterval = config.get<number>('autoRefreshInterval', 30);
+
+      if (currentInterval <= 0) {
+        // Currently disabled, enable with default
+        await config.update('autoRefreshInterval', 30, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage('Git auto refresh enabled (30s interval)');
+      } else {
+        // Currently enabled, disable
+        await config.update('autoRefreshInterval', 0, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage('Git auto refresh disabled');
+      }
+    })
+  );
 }
 
 /**

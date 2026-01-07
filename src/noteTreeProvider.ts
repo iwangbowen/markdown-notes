@@ -21,6 +21,7 @@ export class TreeItem extends vscode.TreeItem {
  */
 export class NotebookTreeItem extends TreeItem {
   private gitStatusChecked = false;
+  private isSyncing = false;
 
   constructor(
     public readonly notebook: Notebook,
@@ -81,6 +82,21 @@ export class NotebookTreeItem extends TreeItem {
     } catch (error) {
       // Silently keep the synchronous status on error
       console.error(`Failed to verify Git status for ${this.notebook.name}:`, error);
+    }
+  }
+
+  /**
+   * Set syncing state
+   */
+  setSyncing(syncing: boolean): void {
+    this.isSyncing = syncing;
+    if (syncing) {
+      // Show syncing icon
+      this.iconPath = new vscode.ThemeIcon('sync~spin', new vscode.ThemeColor('charts.blue'));
+      this.description = 'Syncing...';
+    } else {
+      // Restore normal icon
+      this.updateGitStatusSync();
     }
   }
 
@@ -349,6 +365,33 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
     });
 
     return items;
+  }
+
+  /**
+   * Refresh Git status for all notebooks (without re-reading file system)
+   * Used by auto refresh mechanism
+   */
+  async refreshGitStatus(): Promise<void> {
+    const notebooks = await this.notebookManager.getNotebooks();
+
+    for (const notebook of notebooks) {
+      if (!notebook.gitConfig || !this.gitManager) {
+        continue;
+      }
+
+      const item = new NotebookTreeItem(notebook, this.gitManager);
+
+      // Show syncing state
+      item.setSyncing(true);
+      this._onDidChangeTreeData.fire(item);
+
+      // Update Git status asynchronously
+      await item.initializeGitStatus();
+
+      // Restore normal state
+      item.setSyncing(false);
+      this._onDidChangeTreeData.fire(item);
+    }
   }
 
   /**
