@@ -1145,7 +1145,7 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Register command: compare with HEAD (use VS Code built-in Git)
+  // Register command: compare with HEAD (use our own Git implementation)
   context.subscriptions.push(
     vscode.commands.registerCommand('markdownNotes.compareWithHEAD', async (item: NoteTreeItem) => {
       if (!item || !item.noteUri) {
@@ -1153,13 +1153,62 @@ export async function activate(context: vscode.ExtensionContext) {
         return;
       }
 
+      const notebookId = item.notebookId;
+      const notebook = (await notebookManager.getNotebooks()).find(n => n.id === notebookId);
+
+      if (!notebook || !notebook.gitConfig || !notebook.gitConfig.initialized) {
+        vscode.window.showWarningMessage('Git repository not initialized for this notebook');
+        return;
+      }
+
       try {
-        // Execute Git Compare command (requires Git extension)
-        await vscode.commands.executeCommand('git.openChange', item.noteUri);
+        logger.info(`Comparing with HEAD: ${item.noteUri.fsPath}`, 'Git');
+
+        // Get the file content from HEAD
+        const headContent = await gitManager.getFileAtCommit(
+          notebookId,
+          item.noteUri.fsPath,
+          'HEAD'
+        );
+
+        // Create a unique URI for the HEAD version
+        const fileName = path.basename(item.noteUri.fsPath);
+        const headUri = vscode.Uri.parse(
+          `markdown-notes-git-head:${fileName}?` +
+          `commit=HEAD&path=${encodeURIComponent(item.noteUri.fsPath)}`
+        );
+
+        // Register a text document content provider for the HEAD version
+        const contentProvider = new class implements vscode.TextDocumentContentProvider {
+          provideTextDocumentContent(uri: vscode.Uri): string {
+            return Buffer.from(headContent).toString('utf-8');
+          }
+        };
+
+        const registration = vscode.workspace.registerTextDocumentContentProvider(
+          'markdown-notes-git-head',
+          contentProvider
+        );
+
+        // Open diff view: HEAD (left) vs Working Copy (right)
+        await vscode.commands.executeCommand(
+          'vscode.diff',
+          headUri,
+          item.noteUri,
+          `${fileName} (HEAD ↔ Working Copy)`
+        );
+
+        // Dispose the provider after document is closed
+        const disposable = vscode.workspace.onDidCloseTextDocument(closedDoc => {
+          if (closedDoc.uri.toString() === headUri.toString()) {
+            registration.dispose();
+            disposable.dispose();
+          }
+        });
       } catch (error) {
         logger.error(`Failed to compare with HEAD: ${error}`, 'Git');
         vscode.window.showErrorMessage(
-          `Failed to compare with HEAD. Make sure the Git extension is enabled and the file has changes.`
+          `Failed to compare with HEAD: ${error}`
         );
       }
     })

@@ -148,8 +148,9 @@ For individual notes, you can view Git history and changes using VS Code's built
 **Compare with HEAD**:
 
 - Right-click on a note → "Compare with HEAD"
-- Shows diff between current file and latest commit
-- Useful for reviewing unsaved changes
+- Shows diff between current file (Working Copy) and latest commit (HEAD)
+- Opens a side-by-side diff view with HEAD on the left and Working Copy on the right
+- Works independently from VS Code's Git extension (uses isomorphic-git)
 
 **Git Decorations**:
 
