@@ -1235,8 +1235,7 @@ export async function activate(context: vscode.ExtensionContext) {
       const confirm = await vscode.window.showWarningMessage(
         `Are you sure you want to reset "${fileName}" to the last committed version? All local changes will be lost.`,
         { modal: true },
-        'Reset',
-        'Cancel'
+        'Reset'
       );
 
       if (confirm !== 'Reset') {
