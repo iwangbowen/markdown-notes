@@ -157,6 +157,10 @@ export async function activate(context: vscode.ExtensionContext) {
   );
   logger.info('Git decoration provider registered', 'Core');
 
+  // Link tree provider and decoration provider
+  // This allows tree refresh to automatically refresh decorations
+  treeProvider.setGitDecorationProvider(gitDecorationProvider);
+
   // Watch for file system changes in notebooks directory
   const notebooksUri = vscode.Uri.joinPath(storageManager.getStorageUri(), 'notebooks');
   const fileWatcher = vscode.workspace.createFileSystemWatcher(

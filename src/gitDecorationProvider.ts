@@ -32,7 +32,7 @@ export class GitDecorationProvider implements vscode.FileDecorationProvider {
         private readonly notebookManager: NotebookManager,
         private readonly storageUri: vscode.Uri
     ) {
-        // 监听文件变化
+        // 监听文件变化（实时响应文件系统变化）
         const notebooksPattern = vscode.Uri.joinPath(storageUri, 'notebooks').fsPath + '/**/*.md';
         this.fileWatcher = vscode.workspace.createFileSystemWatcher(notebooksPattern);
 
@@ -54,10 +54,11 @@ export class GitDecorationProvider implements vscode.FileDecorationProvider {
             this._onDidChangeFileDecorations.fire(uri);
         });
 
-        // 定时刷新（每 5 秒）
+        // 定时刷新（每 60 秒）- 作为兜底机制，捕获 Git 操作导致的状态变化
+        // FileSystemWatcher 可以捕获文件内容变化，但无法捕获纯 Git 操作（如 commit、reset）
         this.refreshTimer = setInterval(() => {
             this.refresh();
-        }, 5000);
+        }, 60000); // 60 seconds
     }
 
     async provideFileDecoration(

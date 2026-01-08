@@ -292,6 +292,7 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
   // Cache for parent relationships
   private readonly parentMap = new Map<string, TreeItem>();
   private readonly folderIconPath: vscode.Uri;
+  private gitDecorationProvider?: any; // Import would create circular dependency
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -303,11 +304,23 @@ export class NoteTreeProvider implements vscode.TreeDataProvider<TreeItem> {
   }
 
   /**
-   * Refresh tree view
+   * Set Git decoration provider (called after both providers are created)
+   */
+  setGitDecorationProvider(provider: any): void {
+    this.gitDecorationProvider = provider;
+  }
+
+  /**
+   * Refresh tree view and Git decorations
    */
   refresh(): void {
     this.parentMap.clear();
     this._onDidChangeTreeData.fire();
+
+    // Also refresh Git decorations
+    if (this.gitDecorationProvider) {
+      this.gitDecorationProvider.refresh();
+    }
   }
 
   /**
