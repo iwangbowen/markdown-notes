@@ -5,6 +5,17 @@ All notable changes to the "Markdown Notes Manager" extension will be documented
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2026-01-08
+
+### Fixed
+
+- **Compare with HEAD** - Now uses custom Git implementation instead of VS Code Git extension (notebooks are hidden from Source Control)
+- **Reset to HEAD Dialog** - Removed duplicate Cancel button
+
+### Changed
+
+- **Git Decoration Refresh** - Optimized refresh interval from 5s to 60s (91.7% CPU reduction), unified refresh logic in TreeProvider
+
 ## [0.3.2] - 2026-01-07
 
 ### Added
