@@ -1255,14 +1255,6 @@ export async function activate(context: vscode.ExtensionContext) {
           await gitManager.resetFileToHEAD(notebookId, item.noteUri.fsPath);
         });
 
-        // Refresh the currently open editor if this file is open
-        const activeEditor = vscode.window.activeTextEditor;
-        if (activeEditor && activeEditor.document.uri.toString() === item.noteUri.toString()) {
-          // Close and reopen to refresh content
-          await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-          await vscode.window.showTextDocument(item.noteUri);
-        }
-
         vscode.window.showInformationMessage(`"${fileName}" has been reset to HEAD`);
       } catch (error) {
         logger.error(`Failed to reset file to HEAD: ${error}`, 'Git');
